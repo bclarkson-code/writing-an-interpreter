@@ -2,10 +2,13 @@ from enum import IntEnum, auto
 from typing import Callable
 
 from writing_an_interpreter.ast import (
-    Boolean,
+    BlockStatement,
+    BooleanExpression,
     Expression,
     ExpressionStatement,
+    FunctionLiteral,
     Identifier,
+    IfExpression,
     InfixExpression,
     IntegerLiteral,
     LetStatement,
@@ -47,7 +50,7 @@ precedences = {
 
 class Parser:
     lexer: Lexer
-    current: Token
+    token: Token
     next: Token
     errors: list[Exception]
     prefix_parse_functions: dict[TokenType, Callable]
@@ -55,7 +58,7 @@ class Parser:
 
     def __init__(self, lexer: Lexer):
         self.lexer = lexer
-        self.current = self.lexer.next_token()
+        self.token = self.lexer.next_token()
         self.next = self.lexer.next_token()
 
         self.errors = []
@@ -68,6 +71,8 @@ class Parser:
         self.register_prefix(TokenType.TRUE, self.parse_boolean)
         self.register_prefix(TokenType.FALSE, self.parse_boolean)
         self.register_prefix(TokenType.LPAREN, self.parse_grouped_expression)
+        self.register_prefix(TokenType.IF, self.parse_if_expression)
+        self.register_prefix(TokenType.FUNCTION, self.parse_function_literal)
 
         self.infix_parse_functions = {}
         self.register_infix(TokenType.PLUS, self.parse_infix_expression)
@@ -80,11 +85,11 @@ class Parser:
         self.register_infix(TokenType.GT, self.parse_infix_expression)
 
     def next_token(self):
-        self.current = self.next
+        self.token = self.next
         self.next = self.lexer.next_token()
 
     def current_token_is(self, token_type: TokenType):
-        return self.current.type == token_type
+        return self.token.type == token_type
 
     def peek_token_is(self, token_type: TokenType):
         return self.next.type == token_type
@@ -104,14 +109,14 @@ class Parser:
     def parse_program(self):
         statements = []
 
-        while self.current.type != TokenType.EOF:
+        while self.token.type != TokenType.EOF:
             if statement := self.parse_statement():
                 statements.append(statement)
             self.next_token()
         return Program(statements=statements)
 
     def parse_statement(self):
-        match self.current.type:
+        match self.token.type:
             case TokenType.LET:
                 return self.parse_let_statement()
             case TokenType.RETURN:
@@ -120,11 +125,11 @@ class Parser:
                 return self.parse_expression_statement()
 
     def parse_let_statement(self):
-        token = self.current
+        token = self.token
         if not self.expect_peek(TokenType.IDENT):
             return None
 
-        identifier = Identifier(token=self.current, value=self.current.literal)
+        identifier = Identifier(token=self.token, value=self.token.literal)
 
         if not self.expect_peek(TokenType.ASSIGN):
             return None
@@ -136,7 +141,7 @@ class Parser:
         return LetStatement(token=token, name=identifier, value=None)
 
     def parse_return_statement(self):
-        token = self.current
+        token = self.token
 
         self.next_token()
 
@@ -151,7 +156,7 @@ class Parser:
         self.infix_parse_functions[token_type] = parse_function
 
     def parse_expression_statement(self):
-        token = self.current
+        token = self.token
 
         expression = self.parse_expression(Precedence.LOWEST)
 
@@ -161,10 +166,10 @@ class Parser:
         return ExpressionStatement(token=token, expression=expression)
 
     def parse_expression(self, precedence: Precedence) -> Expression | None:
-        prefix = self.prefix_parse_functions.get(self.current.type, None)
+        prefix = self.prefix_parse_functions.get(self.token.type, None)
         if prefix is None:
             self.errors.append(
-                ParseError(f"no prefix parse function for {self.current.type} found")
+                ParseError(f"no prefix parse function for {self.token.type} found")
             )
             return None
 
@@ -183,21 +188,21 @@ class Parser:
         return left
 
     def parse_identifier(self) -> Identifier:
-        return Identifier(token=self.current, value=self.current.literal)
+        return Identifier(token=self.token, value=self.token.literal)
 
     def parse_integer_literal(self) -> IntegerLiteral | None:
         try:
-            value = int(self.current.literal)
+            value = int(self.token.literal)
         except ValueError:
-            error = ParseError(f"Could not parse {self.current.literal} as integer")
+            error = ParseError(f"Could not parse {self.token.literal} as integer")
             self.errors.append(error)
             return None
 
-        return IntegerLiteral(token=self.current, value=value)
+        return IntegerLiteral(token=self.token, value=value)
 
     def parse_prefix_expression(self) -> PrefixExpression:
-        token = self.current
-        operator = self.current.literal
+        token = self.token
+        operator = self.token.literal
         self.next_token()
         right = self.parse_expression(Precedence.PREFIX)
 
@@ -207,11 +212,11 @@ class Parser:
         return precedences.get(self.next.type, Precedence.LOWEST)
 
     def current_precedence(self) -> Precedence:
-        return precedences.get(self.current.type, Precedence.LOWEST)
+        return precedences.get(self.token.type, Precedence.LOWEST)
 
     def parse_infix_expression(self, left: Expression) -> InfixExpression:
-        token = self.current
-        operator = self.current.literal
+        token = self.token
+        operator = self.token.literal
         precedence = self.current_precedence()
 
         self.next_token()
@@ -219,8 +224,10 @@ class Parser:
 
         return InfixExpression(token=token, left=left, operator=operator, right=right)
 
-    def parse_boolean(self) -> Boolean:
-        return Boolean(token=self.current, value=self.current_token_is(TokenType.TRUE))
+    def parse_boolean(self) -> BooleanExpression:
+        return BooleanExpression(
+            token=self.token, value=self.current_token_is(TokenType.TRUE)
+        )
 
     def parse_grouped_expression(self) -> Expression | None:
         self.next_token()
@@ -231,3 +238,82 @@ class Parser:
             return None
 
         return expression
+
+    def parse_if_expression(self) -> Expression | None:
+        token = self.token
+
+        if not self.expect_peek(TokenType.LPAREN):
+            return None
+        self.next_token()
+
+        condition = self.parse_expression(Precedence.LOWEST)
+
+        if not self.expect_peek(TokenType.RPAREN):
+            return None
+
+        if not self.expect_peek(TokenType.LBRACE):
+            return None
+
+        consequence = self.parse_block_statement()
+
+        if self.next.type == TokenType.ELSE:
+            self.next_token()
+
+            if not self.expect_peek(TokenType.LBRACE):
+                return None
+
+            alternative = self.parse_block_statement()
+        else:
+            alternative = None
+
+        return IfExpression(
+            token=token,
+            condition=condition,
+            consequence=consequence,
+            alternative=alternative,
+        )
+
+    def parse_block_statement(self):
+        token = self.token
+        statements = []
+
+        self.next_token()
+        while self.token.type not in [TokenType.RBRACE, TokenType.EOF]:
+            statement = self.parse_statement()
+            if statement:
+                statements.append(statement)
+            self.next_token()
+        return BlockStatement(token=token, statements=statements)
+
+    def parse_function_literal(self):
+        token = self.token
+
+        if not self.expect_peek(TokenType.LPAREN):
+            return None
+
+        parameters = self.parse_function_parameters()
+        if not self.expect_peek(TokenType.LBRACE):
+            return None
+
+        body = self.parse_block_statement()
+
+        return FunctionLiteral(token=token, parameters=parameters, body=body)
+
+    def parse_function_parameters(self) -> list[Identifier] | None:
+        identifiers = []
+        if self.peek_token_is(TokenType.RPAREN):
+            self.next_token()
+            return identifiers
+        self.next_token()
+
+        identifiers.append(Identifier(token=self.token, value=self.token.literal))
+
+        while self.peek_token_is(TokenType.COMMA):
+            self.next_token()
+            self.next_token()
+            identifiers.append(Identifier(token=self.token, value=self.token.literal))
+
+        if not self.expect_peek(TokenType.RPAREN):
+            return None
+
+        return identifiers

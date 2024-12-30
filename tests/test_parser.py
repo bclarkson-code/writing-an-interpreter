@@ -1,8 +1,10 @@
 from writing_an_interpreter.ast import (
-    Boolean,
+    BooleanExpression,
     Expression,
     ExpressionStatement,
+    FunctionLiteral,
     Identifier,
+    IfExpression,
     InfixExpression,
     IntegerLiteral,
     LetStatement,
@@ -263,6 +265,120 @@ def test_operator_precedence_is_correct():
         assert str(program) == expected
 
 
+def test_can_parse_if_statement():
+    string = "if (x < y) { x }"
+
+    lexer = Lexer(string)
+    parser = Parser(lexer)
+
+    program = parser.parse_program()
+    assert not parser.errors
+
+    assert len(program) == 1
+
+    [statement] = program.statements
+    assert isinstance(statement, ExpressionStatement)
+
+    if_expression = statement.expression
+    assert isinstance(if_expression, IfExpression)
+
+    assert is_infix_expression_valid(if_expression.condition, "x", "<", "y")
+
+    assert len(if_expression.consequence.statements) == 1
+    [consequence_expression] = if_expression.consequence.statements
+    assert isinstance(consequence_expression, ExpressionStatement)
+    assert is_identifier_valid(consequence_expression.expression, "x")
+
+    assert if_expression.alternative is None
+
+
+def test_can_parse_if_else_statement():
+    string = "if (x < y) { x } else { y }"
+
+    lexer = Lexer(string)
+    parser = Parser(lexer)
+
+    program = parser.parse_program()
+    assert not parser.errors
+
+    assert len(program) == 1
+
+    [statement] = program.statements
+    assert isinstance(statement, ExpressionStatement)
+
+    if_expression = statement.expression
+    assert isinstance(if_expression, IfExpression)
+
+    assert is_infix_expression_valid(if_expression.condition, "x", "<", "y")
+
+    assert len(if_expression.consequence.statements) == 1
+    [consequence] = if_expression.consequence.statements
+    assert isinstance(consequence, ExpressionStatement)
+    assert is_identifier_valid(consequence.expression, "x")
+
+    assert if_expression.alternative is not None
+    assert len(if_expression.alternative.statements) == 1
+    [alternative] = if_expression.alternative.statements
+    assert isinstance(alternative, ExpressionStatement)
+    assert is_identifier_valid(alternative.expression, "y")
+
+
+def test_can_parse_function_literal():
+    string = "fn(x, y) { x + y; }"
+
+    lexer = Lexer(string)
+    parser = Parser(lexer)
+
+    program = parser.parse_program()
+    assert not parser.errors
+
+    assert len(program) == 1
+
+    [statement] = program.statements
+    assert isinstance(statement, ExpressionStatement)
+
+    function = statement.expression
+    assert isinstance(function, FunctionLiteral)
+
+    assert len(function.parameters) == 2
+    param_1, param_2 = function.parameters
+    assert is_literal_expression_valid(param_1, "x")
+    assert is_literal_expression_valid(param_2, "y")
+
+    assert len(function.body.statements) == 1
+    [body_statement] = function.body.statements
+    assert is_infix_expression_valid(body_statement.expression, "x", "+", "y")
+
+
+def test_can_parse_function_params():
+    tests = [
+        ("fn() {};", []),
+        ("fn(x) {};", ["x"]),
+        ("fn(x, y, z) {};", ["x", "y", "z"]),
+    ]
+
+    for string, want in tests:
+        lexer = Lexer(string)
+        parser = Parser(lexer)
+
+        program = parser.parse_program()
+        assert not parser.errors
+
+        assert len(program) == 1
+
+        [statement] = program.statements
+        assert isinstance(statement, ExpressionStatement)
+
+        function = statement.expression
+        assert isinstance(function, FunctionLiteral)
+
+        assert len(function.parameters) == len(want)
+
+        for param, expected in zip(function.parameters, want):
+            is_literal_expression_valid(param, expected)
+
+
+# -------helper functions-------
 def is_identifier_valid(expression: Identifier, value: str):
     assert isinstance(expression, Identifier)
     assert expression.value == value
@@ -297,8 +413,8 @@ def is_infix_expression_valid(expression: InfixExpression, left, operator, right
     return True
 
 
-def is_boolean_valid(expression: Boolean, value):
-    assert isinstance(expression, Boolean)
+def is_boolean_valid(expression: BooleanExpression, value):
+    assert isinstance(expression, BooleanExpression)
     assert expression.value == value
     assert expression.token_literal() == value
 

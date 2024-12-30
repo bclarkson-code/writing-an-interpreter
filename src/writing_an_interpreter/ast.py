@@ -165,7 +165,7 @@ class InfixExpression(Expression):
 
 
 @dataclass
-class Boolean(Expression):
+class BooleanExpression(Expression):
     token: Token
     value: bool
 
@@ -183,8 +183,71 @@ class Boolean(Expression):
 
 
 @dataclass
+class BlockStatement(Expression):
+    token: Token
+    statements: list[Statement]
+
+    def statement_node(self):
+        return None
+
+    def token_literal(self):
+        return self.token.literal
+
+    def __str__(self):
+        return self.token.literal
+
+    def __repr__(self):
+        return "".join(str(s) for s in self.statements)
+
+
+@dataclass
+class IfExpression(Expression):
+    token: Token
+    condition: Expression
+    consequence: BlockStatement
+    alternative: BlockStatement | None = None
+
+    def expression_node(self):
+        return None
+
+    def token_literal(self):
+        return self.token.literal
+
+    def __str__(self):
+        return self.token.literal
+
+    def __repr__(self):
+        return f"if{self.condition}{self.consequence}{self.alternative}"
+
+
+@dataclass
+class FunctionLiteral(Expression):
+    token: Token
+    parameters: list[Identifier]
+    body: BlockStatement
+
+    def expression_node(self):
+        return None
+
+    def token_literal(self):
+        return self.token.literal
+
+    def __str__(self):
+        return self.token.literal
+
+    def __repr__(self):
+        params = ", ".join(str(p) for p in self.parameters)
+        return f"{self.token_literal()}({params}){self.body}"
+
+
 class Program(Sequence):
     statements: list[Statement]
+
+    def __init__(self, statements: list | None = None):
+        if statements is None:
+            self.statements = []
+        else:
+            self.statements = statements
 
     def token_literal(self) -> str:
         if len(self.statements) > 0:
