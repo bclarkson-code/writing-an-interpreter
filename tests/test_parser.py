@@ -19,25 +19,25 @@ from writing_an_interpreter.tokens import Token, TokenType
 
 
 def test_can_parse_let_statements():
-    string = """
-let x = 5;
-let y = 10;
-let foobar = 838383;
-    """
-    lexer = Lexer(string)
-    parser = Parser(lexer)
+    tests = [
+        ("let x = 5;", "x", 5),
+        ("let y = true;", "y", True),
+        ("let foobar = y;", "foobar", "y"),
+    ]
+    for string, ident, value in tests:
+        lexer = Lexer(string)
+        parser = Parser(lexer)
 
-    program = parser.parse_program()
+        program = parser.parse_program()
+        assert not parser.errors
 
-    if parser.errors:
-        raise ValueError(str(parser.errors))
+        assert len(program.statements) == 1
+        [statement] = program.statements
+        assert isinstance(statement, LetStatement)
 
-    assert program is not None
-    assert len(program) == 3
-
-    assert is_let_statement_valid(program[0], "x")
-    assert is_let_statement_valid(program[1], "y")
-    assert is_let_statement_valid(program[2], "foobar")
+        assert is_let_statement_valid(statement, ident)
+        breakpoint()
+        assert is_literal_expression_valid(statement.value, value)
 
 
 def is_let_statement_valid(statement: LetStatement, name: str):
@@ -428,7 +428,8 @@ def is_literal_expression_valid(expression: Expression, expected):
             return is_identifier_valid(expression, expected)
         case "bool":
             return is_boolean_valid(expression, expected)
-    return True
+        case _:
+            return False
 
 
 def is_integer_literal_valid(expression: Expression, value: int):
