@@ -193,10 +193,10 @@ class BlockStatement(Expression):
     def token_literal(self):
         return self.token.literal
 
-    def __str__(self):
-        return self.token.literal
-
     def __repr__(self):
+        return self.__str__()
+
+    def __str__(self):
         return "".join(str(s) for s in self.statements)
 
 
@@ -213,10 +213,10 @@ class IfExpression(Expression):
     def token_literal(self):
         return self.token.literal
 
-    def __str__(self):
-        return self.token.literal
-
     def __repr__(self):
+        return self.__str__()
+
+    def __str__(self):
         return f"if{self.condition}{self.consequence}{self.alternative}"
 
 
@@ -232,12 +232,32 @@ class FunctionLiteral(Expression):
     def token_literal(self):
         return self.token.literal
 
+    def __repr__(self):
+        return self.__str__()
+
     def __str__(self):
+        params = ", ".join(str(p) for p in self.parameters)
+        return f"{self.token_literal()}({params}){self.body}"
+
+
+@dataclass
+class CallExpression(Expression):
+    token: Token
+    function: FunctionLiteral | Identifier
+    arguments: list[Expression]
+
+    def expression_node(self):
+        return None
+
+    def token_literal(self):
         return self.token.literal
 
     def __repr__(self):
-        params = ", ".join(str(p) for p in self.parameters)
-        return f"{self.token_literal()}({params}){self.body}"
+        return self.__str__()
+
+    def __str__(self):
+        args = ", ".join(str(a) for a in self.arguments)
+        return f"{str(self.function)}({args})"
 
 
 class Program(Sequence):

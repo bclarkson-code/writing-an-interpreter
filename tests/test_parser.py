@@ -1,5 +1,6 @@
 from writing_an_interpreter.ast import (
     BooleanExpression,
+    CallExpression,
     Expression,
     ExpressionStatement,
     FunctionLiteral,
@@ -253,6 +254,12 @@ def test_operator_precedence_is_correct():
         ("2 / (5 + 5)", "(2 / (5 + 5))"),
         ("-(5 + 5)", "(-(5 + 5))"),
         ("!(true == true)", "(!(true == true))"),
+        ("a + add(b * c) + d", "((a + add((b * c))) + d)"),
+        (
+            "add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8))",
+            "add(a, b, 1, (2 * 3), (4 + 5), add(6, (7 * 8)))",
+        ),
+        ("add(a + b + c * d / f + g)", "add((((a + b) + ((c * d) / f)) + g))"),
     ]
 
     for string, expected in tests:
@@ -376,6 +383,33 @@ def test_can_parse_function_params():
 
         for param, expected in zip(function.parameters, want):
             is_literal_expression_valid(param, expected)
+
+
+def test_can_parse_call_expression():
+    string = "add(1, 2 * 3, 4 + 5);"
+
+    lexer = Lexer(string)
+    parser = Parser(lexer)
+
+    program = parser.parse_program()
+    assert not parser.errors
+
+    assert len(program) == 1
+
+    [statement] = program.statements
+    assert isinstance(statement, ExpressionStatement)
+
+    call_expression = statement.expression
+    assert isinstance(call_expression, CallExpression)
+
+    assert is_identifier_valid(call_expression.function, "add")
+
+    assert len(call_expression.arguments) == 3
+    arg_1, arg_2, arg_3 = call_expression.arguments
+
+    assert is_literal_expression_valid(arg_1, 1)
+    assert is_infix_expression_valid(arg_2, 2, "*", 3)
+    assert is_infix_expression_valid(arg_3, 4, "+", 5)
 
 
 # -------helper functions-------

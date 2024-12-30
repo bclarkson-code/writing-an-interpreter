@@ -4,6 +4,7 @@ from typing import Callable
 from writing_an_interpreter.ast import (
     BlockStatement,
     BooleanExpression,
+    CallExpression,
     Expression,
     ExpressionStatement,
     FunctionLiteral,
@@ -45,6 +46,7 @@ precedences = {
     TokenType.MINUS: Precedence.SUM,
     TokenType.SLASH: Precedence.PRODUCT,
     TokenType.ASTERISK: Precedence.PRODUCT,
+    TokenType.LPAREN: Precedence.CALL,
 }
 
 
@@ -83,6 +85,7 @@ class Parser:
         self.register_infix(TokenType.NOT_EQ, self.parse_infix_expression)
         self.register_infix(TokenType.LT, self.parse_infix_expression)
         self.register_infix(TokenType.GT, self.parse_infix_expression)
+        self.register_infix(TokenType.LPAREN, self.parse_call_expression)
 
     def next_token(self):
         self.token = self.next
@@ -317,3 +320,28 @@ class Parser:
             return None
 
         return identifiers
+
+    def parse_call_expression(self, function: FunctionLiteral | Identifier):
+        token = self.token
+        arguments = self.parse_call_arguments()
+        return CallExpression(token=token, function=function, arguments=arguments)
+
+    def parse_call_arguments(self):
+        arguments = []
+
+        if self.peek_token_is(TokenType.RPAREN):
+            self.next_token()
+            return arguments
+
+        self.next_token()
+        arguments.append(self.parse_expression(Precedence.LOWEST))
+
+        while self.peek_token_is(TokenType.COMMA):
+            self.next_token()
+            self.next_token()
+            arguments.append(self.parse_expression(Precedence.LOWEST))
+
+        if not self.expect_peek(TokenType.RPAREN):
+            return None
+
+        return arguments
