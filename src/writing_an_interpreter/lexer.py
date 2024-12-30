@@ -23,9 +23,31 @@ class Lexer:
         self.skip_whitespace()
         match self.current:
             case "=":
-                token = Token(TokenType.ASSIGN, self.current)
+                if self.peek_char() == "=":
+                    first = self.current
+                    self.read_char()
+                    token = Token(TokenType.EQ, first + self.current)
+                else:
+                    token = Token(TokenType.ASSIGN, self.current)
             case "+":
                 token = Token(TokenType.PLUS, self.current)
+            case "-":
+                token = Token(TokenType.MINUS, self.current)
+            case "!":
+                if self.peek_char() == "=":
+                    first = self.current
+                    self.read_char()
+                    token = Token(TokenType.NOT_EQ, first + self.current)
+                else:
+                    token = Token(TokenType.BANG, self.current)
+            case "*":
+                token = Token(TokenType.ASTERISK, self.current)
+            case "/":
+                token = Token(TokenType.SLASH, self.current)
+            case "<":
+                token = Token(TokenType.LT, self.current)
+            case ">":
+                token = Token(TokenType.GT, self.current)
             case ",":
                 token = Token(TokenType.COMMA, self.current)
             case ";":
@@ -81,8 +103,14 @@ class Lexer:
         while self.is_number(self.current):
             self.read_char()
 
-        return self.inputs[start : self.read_position]
+        return self.inputs[start : self.position]
 
     def skip_whitespace(self):
         while self.current in {" ", "\n", "\t", "\r"}:
             self.read_char()
+
+    def peek_char(self):
+        if self.read_position >= len(self.inputs):
+            return ""
+        else:
+            return self.inputs[self.read_position]

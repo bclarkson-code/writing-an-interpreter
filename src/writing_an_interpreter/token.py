@@ -1,5 +1,5 @@
-from enum import Enum
 from dataclasses import dataclass
+from enum import Enum
 
 
 class TokenType(str, Enum):
@@ -13,6 +13,14 @@ class TokenType(str, Enum):
     # Operators
     ASSIGN = "="
     PLUS = "+"
+    MINUS = "-"
+    BANG = "!"
+    ASTERISK = "*"
+    SLASH = "/"
+    LT = "<"
+    GT = ">"
+    EQ = "=="
+    NOT_EQ = "!="
 
     # Delimiters
     COMMA = ","
@@ -25,6 +33,11 @@ class TokenType(str, Enum):
     # Keywords
     FUNCTION = "FUNCTION"
     LET = "LET"
+    TRUE = "TRUE"
+    FALSE = "FALSE"
+    IF = "IF"
+    ELSE = "ELSE"
+    RETURN = "RETURN"
 
 
 @dataclass
@@ -33,4 +46,12 @@ class Token:
     literal: str
 
 
-keywords = {"let": TokenType.LET, "fn": TokenType.FUNCTION}
+keywords = {
+    "let": TokenType.LET,
+    "fn": TokenType.FUNCTION,
+    "true": TokenType.TRUE,
+    "false": TokenType.FALSE,
+    "if": TokenType.IF,
+    "else": TokenType.ELSE,
+    "return": TokenType.RETURN,
+}
