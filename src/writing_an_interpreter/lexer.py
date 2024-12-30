@@ -1,4 +1,4 @@
-from writing_an_interpreter.token import Token, TokenType, keywords
+from writing_an_interpreter.tokens import Token, TokenType, keywords
 
 
 class Lexer:
@@ -76,6 +76,9 @@ class Lexer:
         return token
 
     def is_letter(self, char: str):
+        if not char:
+            return False
+
         if not isinstance(char, str) or len(char) > 1:
             raise ValueError(f"Expected string of length 1. Found: {char}")
 
@@ -86,6 +89,9 @@ class Lexer:
         return is_lowercase | is_uppercase | is_underscore
 
     def is_number(self, char: str):
+        if not char:
+            return False
+
         if not isinstance(char, str) or len(char) > 1:
             raise ValueError(f"Expected string of length 1. Found: {char}")
 

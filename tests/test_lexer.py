@@ -1,5 +1,5 @@
 from writing_an_interpreter.lexer import Lexer
-from writing_an_interpreter.token import Token, TokenType
+from writing_an_interpreter.tokens import Token, TokenType
 
 
 def test_can_lex_single_delimiters_and_operators():
