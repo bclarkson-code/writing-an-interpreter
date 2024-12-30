@@ -1,6 +1,18 @@
-from writing_an_interpreter.ast import LetStatement
+from writing_an_interpreter.ast import (
+    Boolean,
+    Expression,
+    ExpressionStatement,
+    Identifier,
+    InfixExpression,
+    IntegerLiteral,
+    LetStatement,
+    PrefixExpression,
+    Program,
+    ReturnStatement,
+)
 from writing_an_interpreter.lexer import Lexer
-from writing_an_interpreter.parser import Parser
+from writing_an_interpreter.parser import ParseError, Parser
+from writing_an_interpreter.tokens import Token, TokenType
 
 
 def test_can_parse_let_statements():
@@ -14,6 +26,9 @@ let foobar = 838383;
 
     program = parser.parse_program()
 
+    if parser.errors:
+        raise ValueError(str(parser.errors))
+
     assert program is not None
     assert len(program) == 3
 
@@ -25,6 +40,266 @@ let foobar = 838383;
 def is_let_statement_valid(statement: LetStatement, name: str):
     assert statement.token_literal() == "let"
     assert statement.name.value == name
-    assert statement.name.token_literal == name
+    assert statement.name.token_literal() == name
+
+    return True
+
+
+def test_can_parse_invalid_let_statements():
+    string = """
+let x 5;
+let = 10;
+let 838383;
+    """
+    lexer = Lexer(string)
+    parser = Parser(lexer)
+
+    parser.parse_program()
+
+    assert len(parser.errors) == 4
+
+    first, second, third, fourth = parser.errors
+
+    assert exceptions_equal(
+        first, ParseError("expected next token to be =, got INT instead")
+    )
+    assert exceptions_equal(
+        second, ParseError("expected next token to be IDENT, got = instead")
+    )
+    assert exceptions_equal(third, ParseError("no prefix parse function for = found"))
+    assert exceptions_equal(
+        fourth, ParseError("expected next token to be IDENT, got INT instead")
+    )
+
+
+def exceptions_equal(first, second):
+    same_exception = first.__class__ == second.__class__
+    same_content = first.args == second.args
+    return same_exception and same_content
+
+
+def test_can_parse_valid_return_statements():
+    string = """
+return 5;
+return 10;
+return 993322;
+    """
+    lexer = Lexer(string)
+    parser = Parser(lexer)
+
+    program = parser.parse_program()
+
+    if parser.errors:
+        raise ValueError(str(parser.errors))
+
+    assert program is not None
+    assert len(program) == 3
+
+    first, second, third = program
+
+    assert isinstance(first, ReturnStatement)
+    assert first.token_literal() == "return"
+    assert isinstance(second, ReturnStatement)
+    assert second.token_literal() == "return"
+    assert isinstance(third, ReturnStatement)
+    assert third.token_literal() == "return"
+
+
+def test_can_convert_ast_back_to_string():
+    statement = LetStatement(
+        token=Token(type=TokenType.LET, literal="let"),
+        name=Identifier(
+            token=Token(type=TokenType.IDENT, literal="myVar"), value="myVar"
+        ),
+        value=Identifier(
+            token=Token(type=TokenType.IDENT, literal="anotherVar"),
+            value="anotherVar",
+        ),
+    )
+    program = Program(statements=[statement])
+
+    assert str(program) == "let myVar = anotherVar;"
+
+
+def test_can_parse_identifier_expression():
+    string = "foobar;"
+
+    lexer = Lexer(string)
+    parser = Parser(lexer)
+
+    program = parser.parse_program()
+    assert not parser.errors
+
+    assert len(program) == 1
+
+    [statement] = program.statements
+    assert isinstance(statement, ExpressionStatement)
+
+    identifier = statement.expression
+    assert isinstance(identifier, Identifier)
+
+    assert identifier.value == "foobar"
+    assert identifier.token_literal() == "foobar"
+
+
+def test_can_parse_integer_expression():
+    string = "5;"
+
+    lexer = Lexer(string)
+    parser = Parser(lexer)
+
+    program = parser.parse_program()
+    assert not parser.errors
+
+    assert len(program) == 1
+
+    [statement] = program.statements
+    assert isinstance(statement, ExpressionStatement)
+
+    integer_literal = statement.expression
+    assert isinstance(integer_literal, IntegerLiteral)
+
+    assert integer_literal.value == 5
+    assert integer_literal.token_literal() == "5"
+
+
+def test_can_parse_prefix_expressions():
+    tests = [
+        # string, operator, value
+        ("!5;", "!", 5),
+        ("-15;", "-", 15),
+        ("!true;", "!", True),
+        ("!false;", "!", False),
+    ]
+
+    for string, operator, value in tests:
+        lexer = Lexer(string)
+        parser = Parser(lexer)
+
+        program = parser.parse_program()
+        assert not parser.errors
+
+        assert len(program) == 1
+
+        [statement] = program.statements
+        assert isinstance(statement, ExpressionStatement)
+
+        prefix_expression = statement.expression
+        assert isinstance(prefix_expression, PrefixExpression)
+
+        assert prefix_expression.operator == operator
+        assert is_literal_expression_valid(prefix_expression.right, value)
+
+
+def test_can_parse_infix_expressions():
+    tests = [
+        # string, left, operator, right
+        ("5 + 5;", 5, "+", 5),
+        ("5 - 5;", 5, "-", 5),
+        ("5 * 5;", 5, "*", 5),
+        ("5 / 5;", 5, "/", 5),
+        ("5 > 5;", 5, ">", 5),
+        ("5 < 5;", 5, "<", 5),
+        ("5 == 5;", 5, "==", 5),
+        ("5 != 5;", 5, "!=", 5),
+        ("true == true", True, "==", True),
+        ("true != false", True, "!=", False),
+        ("false == false", False, "==", False),
+    ]
+
+    for string, left, operator, right in tests:
+        lexer = Lexer(string)
+        parser = Parser(lexer)
+
+        program = parser.parse_program()
+        assert not parser.errors
+
+        assert len(program) == 1
+
+        [statement] = program.statements
+        assert isinstance(statement, ExpressionStatement)
+
+        infix_expression = statement.expression
+        assert isinstance(infix_expression, InfixExpression)
+
+        assert is_literal_expression_valid(infix_expression.left, left)
+        assert infix_expression.operator == operator
+        assert is_literal_expression_valid(infix_expression.right, right)
+
+
+def test_operator_precedence_is_correct():
+    tests = [
+        # string, parsed
+        ("-a * b", "((-a) * b)"),
+        ("!-a", "(!(-a))"),
+        ("a + b + c", "((a + b) + c)"),
+        ("a + b - c", "((a + b) - c)"),
+        ("a * b * c", "((a * b) * c)"),
+        ("a * b / c", "((a * b) / c)"),
+        ("a + b / c", "(a + (b / c))"),
+        ("a + b * c + d / e - f", "(((a + (b * c)) + (d / e)) - f)"),
+        ("3 + 4; -5 * 5", "(3 + 4)((-5) * 5)"),
+        ("5 > 4 == 3 < 4", "((5 > 4) == (3 < 4))"),
+        ("5 < 4 != 3 > 4", "((5 < 4) != (3 > 4))"),
+        ("3 + 4 * 5 == 3 * 1 + 4 * 5", "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))"),
+        ("true", "true"),
+        ("false", "false"),
+        ("3 > 5 == false", "((3 > 5) == false)"),
+        ("3 < 5 == true", "((3 < 5) == true)"),
+        ("1 + (2 + 3) + 4", "((1 + (2 + 3)) + 4)"),
+        ("(5 + 5) * 2", "((5 + 5) * 2)"),
+        ("2 / (5 + 5)", "(2 / (5 + 5))"),
+        ("-(5 + 5)", "(-(5 + 5))"),
+        ("!(true == true)", "(!(true == true))"),
+    ]
+
+    for string, expected in tests:
+        lexer = Lexer(string)
+        parser = Parser(lexer)
+
+        program = parser.parse_program()
+        assert not parser.errors
+
+        assert str(program) == expected
+
+
+def is_identifier_valid(expression: Identifier, value: str):
+    assert isinstance(expression, Identifier)
+    assert expression.value == value
+    assert expression.token_literal() == value
+    return True
+
+
+def is_literal_expression_valid(expression: Expression, expected):
+    match type(expected):
+        case "int":
+            return is_integer_literal_valid(expression, int(expected))
+        case "string":
+            return is_identifier_valid(expression, expected)
+        case "bool":
+            return is_boolean_valid(expression, expected)
+    return True
+
+
+def is_integer_literal_valid(expression: Expression, value: int):
+    assert isinstance(expression, IntegerLiteral), expression
+    assert expression.value == value
+    assert expression.token_literal() == str(value)
+    return True
+
+
+def is_infix_expression_valid(expression: InfixExpression, left, operator, right):
+    assert isinstance(expression, InfixExpression)
+    assert is_literal_expression_valid(expression.left, left)
+    assert expression.operator == operator
+    assert is_literal_expression_valid(expression.right, right)
+
+    return True
+
+
+def is_boolean_valid(expression: Boolean, value):
+    assert isinstance(expression, Boolean)
+    assert expression.value == value
+    assert expression.token_literal() == value
 
     return True
