@@ -36,7 +36,6 @@ def test_can_parse_let_statements():
         assert isinstance(statement, LetStatement)
 
         assert is_let_statement_valid(statement, ident)
-        breakpoint()
         assert is_literal_expression_valid(statement.value, value)
 
 
@@ -421,13 +420,13 @@ def is_identifier_valid(expression: Identifier, value: str):
 
 
 def is_literal_expression_valid(expression: Expression, expected):
-    match type(expected):
-        case "int":
-            return is_integer_literal_valid(expression, int(expected))
-        case "string":
+    match expected:
+        case str():
             return is_identifier_valid(expression, expected)
-        case "bool":
+        case bool():
             return is_boolean_valid(expression, expected)
+        case int():
+            return is_integer_literal_valid(expression, int(expected))
         case _:
             return False
 
@@ -451,6 +450,6 @@ def is_infix_expression_valid(expression: InfixExpression, left, operator, right
 def is_boolean_valid(expression: BooleanExpression, value):
     assert isinstance(expression, BooleanExpression)
     assert expression.value == value
-    assert expression.token_literal() == value
+    assert expression.token_literal() == str(value).lower()
 
     return True

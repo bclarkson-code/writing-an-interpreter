@@ -137,20 +137,26 @@ class Parser:
         if not self.expect_peek(TokenType.ASSIGN):
             return None
 
-        # keep going until we hit a semicolon
-        while not self.current_token_is(TokenType.SEMICOLON):
+        self.next_token()
+
+        value = self.parse_expression(Precedence.LOWEST)
+
+        if self.peek_token_is(TokenType.SEMICOLON):
             self.next_token()
 
-        return LetStatement(token=token, name=identifier, value=None)
+        return LetStatement(token=token, name=identifier, value=value)
 
     def parse_return_statement(self):
         token = self.token
 
         self.next_token()
 
-        while not self.current_token_is(TokenType.SEMICOLON):
+        return_value = self.parse_expression(Precedence.LOWEST)
+
+        if self.peek_token_is(TokenType.SEMICOLON):
             self.next_token()
-        return ReturnStatement(token=token, return_value=None)
+
+        return ReturnStatement(token=token, return_value=return_value)
 
     def register_prefix(self, token_type: TokenType, parse_function: Callable):
         self.prefix_parse_functions[token_type] = parse_function
