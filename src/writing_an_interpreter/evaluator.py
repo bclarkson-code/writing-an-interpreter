@@ -1,25 +1,10 @@
-from writing_an_interpreter.ast import (
-    BlockStatement,
-    BooleanExpression,
-    ExpressionStatement,
-    IfExpression,
-    InfixExpression,
-    IntegerLiteral,
-    Node,
-    PrefixExpression,
-    Program,
-    ReturnStatement,
-    Statement,
-)
-from writing_an_interpreter.objects import (
-    Boolean,
-    Error,
-    Integer,
-    Null,
-    Object,
-    ObjectType,
-    ReturnValue,
-)
+from writing_an_interpreter.ast import (BlockStatement, BooleanExpression,
+                                        ExpressionStatement, IfExpression,
+                                        InfixExpression, IntegerLiteral,
+                                        LetStatement, Node, PrefixExpression,
+                                        Program, ReturnStatement, Statement)
+from writing_an_interpreter.objects import (Boolean, Error, Integer, Null,
+                                            Object, ObjectType, ReturnValue)
 
 TRUE = Boolean(True)
 FALSE = Boolean(False)
@@ -59,6 +44,10 @@ def monkey_eval(node: Node) -> Object:
         case ReturnStatement():
             val = monkey_eval(node.return_value)
             return val if is_error(val) else ReturnValue(val)
+
+        case LetStatement():
+            val = monkey_eval(node.value)
+            return val if is_error(val) else ?
 
         case _:
             return None

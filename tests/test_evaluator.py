@@ -113,10 +113,10 @@ if (10 > 1) {
 
 def test_error_handling():
     tests = [
-        # (
-        #     "5 + true;",
-        #     "type mismatch: INTEGER + BOOLEAN",
-        # ),
+        (
+            "5 + true;",
+            "type mismatch: INTEGER + BOOLEAN",
+        ),
         (
             "5 + true; 5;",
             "type mismatch: INTEGER + BOOLEAN",
@@ -141,13 +141,28 @@ def test_error_handling():
             "if (10 > 1) { if (10 > 1) { return true + false; } return 1; } ",
             "unknown operator: BOOLEAN + BOOLEAN",
         ),
+        (
+            "foobar",
+            "identifier not found: foobar",
+        ),
     ]
     for string, want in tests:
         got = run_eval(string)
-        if not isinstance(got, Error):
-            breakpoint()
         assert isinstance(got, Error)
         assert got.message == want
+
+
+def test_can_eval_let_statements():
+    tests = [
+        ("let a = 5; a;", 5),
+        ("let a = 5 * 5; a;", 25),
+        ("let a = 5; let b = a; b;", 5),
+        ("let a = 5; let b = a; let c = a + b + 5; c;", 15),
+    ]
+
+    for string, want in tests:
+        got = run_eval(string)
+        assert is_integer_object_valid(got, want)
 
 
 # --------helper functions---------
