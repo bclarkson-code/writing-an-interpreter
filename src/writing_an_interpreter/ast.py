@@ -260,6 +260,7 @@ class CallExpression(Expression):
         return f"{str(self.function)}({args})"
 
 
+@dataclass
 class Program(Sequence):
     statements: list[Statement]
 
