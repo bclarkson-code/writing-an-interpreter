@@ -1,5 +1,5 @@
 from writing_an_interpreter.lexer import Lexer
-from writing_an_interpreter.tokens import TokenType
+from writing_an_interpreter.parser import Parser
 
 PROMPT = ">> "
 
@@ -9,12 +9,15 @@ def start():
         print(PROMPT, end="")
         scanned = input()
         lexer = Lexer(scanned)
+        parser = Parser(lexer)
+        program = parser.parse_program()
 
-        next_token = lexer.next_token()
+        if parser.errors:
+            for error in parser.errors:
+                print(error)
+            continue
 
-        while next_token.type != TokenType.EOF:
-            print(next_token)
-            next_token = lexer.next_token()
+        print(program)
 
 
 if __name__ == "__main__":
