@@ -66,7 +66,7 @@ twice(addTwo, 2); // => 6
 1. Clone the repository:
 ```bash
 git clone https://github.com/bclarkson-code/writing-an-interpreter.git
-cd monkey-python
+cd writing-an-interpreter
 ```
 
 2. Install the package in development mode:
