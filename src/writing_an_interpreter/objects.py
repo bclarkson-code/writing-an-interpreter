@@ -17,6 +17,7 @@ class ObjectType(str, Enum):
     STRING = "STRING"
     BUILTIN = "BUILTIN"
     ARRAY = "ARRAY"
+    HASH = "HASH"
 
 
 class Object:
@@ -27,29 +28,28 @@ class Object:
         pass
 
 
-@dataclass
+@dataclass(frozen=True)
 class Integer(Object):
     value: int
     type: ObjectType = ObjectType.INTEGER
 
-    def __init__(self, value: int):
-        if not isinstance(value, int):
-            raise TypeError(
-                f"expected value: {value} to have type int. Found: {type(value)}"
-            )
-        self.value = value
+    def hash(self):
+        return HashKey(type=self.type, value=self.value)
 
     def inspect(self):
         return str(self.value)
 
 
-@dataclass
+@dataclass(frozen=True)
 class Boolean(Object):
     value: bool
     type: ObjectType = ObjectType.BOOLEAN
 
     def inspect(self):
         return str(self.value)
+
+    def hash(self):
+        return HashKey(type=self.type, value=1 if self.value else 0)
 
 
 @dataclass
@@ -92,13 +92,16 @@ class Function(Object):
         return f"fn({args}){{\n{body}\n}}"
 
 
-@dataclass
+@dataclass(frozen=True)
 class String(Object):
     value: str
     type: ObjectType = ObjectType.STRING
 
     def inspect(self):
         return self.value
+
+    def hash(self):
+        return HashKey(value=hash(self.value), type=ObjectType.STRING)
 
 
 @dataclass
@@ -118,3 +121,38 @@ class Array(Object):
     def inspect(self):
         elements = ", ".join(e.inspect() for e in self.elements)
         return f"[{elements}]"
+
+
+@dataclass(frozen=True)
+class HashKey:
+    value: int
+    type: ObjectType = ObjectType.ARRAY
+
+
+@dataclass
+class HashPair:
+    key: Object
+    value: Object
+
+
+@dataclass
+class Hash(Object):
+    pairs: dict[HashKey, HashPair]
+    type: ObjectType = ObjectType.HASH
+
+    def inspect(self):
+        pairs = []
+        for pair in self.pairs.values():
+            key = pair.key.inspect()
+            val = pair.value.inspect()
+            pairs.append(f"{key}: {val}")
+        pairs = ", ".join(pairs)
+        return f"{{{pairs}}}"
+
+
+def is_hashable(obj: Object):
+    try:
+        hash(obj)
+        return True
+    except TypeError:
+        return False

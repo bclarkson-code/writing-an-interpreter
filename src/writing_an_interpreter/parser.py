@@ -1,25 +1,15 @@
 from enum import IntEnum, auto
 from typing import Callable
 
-from writing_an_interpreter.ast import (
-    ArrayLiteral,
-    BlockStatement,
-    BooleanExpression,
-    CallExpression,
-    Expression,
-    ExpressionStatement,
-    FunctionLiteral,
-    Identifier,
-    IfExpression,
-    IndexExpression,
-    InfixExpression,
-    IntegerLiteral,
-    LetStatement,
-    PrefixExpression,
-    Program,
-    ReturnStatement,
-    StringLiteral,
-)
+from writing_an_interpreter.ast import (ArrayLiteral, BlockStatement,
+                                        BooleanExpression, CallExpression,
+                                        Expression, ExpressionStatement,
+                                        FunctionLiteral, HashLiteral,
+                                        Identifier, IfExpression,
+                                        IndexExpression, InfixExpression,
+                                        IntegerLiteral, LetStatement,
+                                        PrefixExpression, Program,
+                                        ReturnStatement, StringLiteral)
 from writing_an_interpreter.lexer import Lexer
 from writing_an_interpreter.tokens import Token, TokenType
 
@@ -82,6 +72,7 @@ class Parser:
         self.register_prefix(TokenType.FUNCTION, self.parse_function_literal)
         self.register_prefix(TokenType.STRING, self.parse_string_literal)
         self.register_prefix(TokenType.LBRACKET, self.parse_array_literal)
+        self.register_prefix(TokenType.LBRACE, self.parse_hash_literal)
 
         self.infix_parse_functions = {}
         self.register_infix(TokenType.PLUS, self.parse_infix_expression)
@@ -379,3 +370,27 @@ class Parser:
             return None
 
         return IndexExpression(token, left=left, index=index_)
+
+    def parse_hash_literal(self):
+        token = self.token
+        pairs = {}
+        while not self.peek_token_is(TokenType.RBRACE):
+            self.next_token()
+            key = self.parse_expression(Precedence.LOWEST)
+
+            if not self.expect_peek(TokenType.COLON):
+                return None
+
+            self.next_token()
+            value = self.parse_expression(Precedence.LOWEST)
+
+            pairs[key] = value
+
+            if not self.peek_token_is(TokenType.RBRACE) and not self.expect_peek(
+                TokenType.COMMA
+            ):
+                return None
+        if not self.expect_peek(TokenType.RBRACE):
+            return None
+
+        return HashLiteral(token=token, pairs=pairs)

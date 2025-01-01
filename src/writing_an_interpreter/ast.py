@@ -26,7 +26,7 @@ class Expression(Node):
         pass
 
 
-@dataclass
+@dataclass(frozen=True)
 class Identifier(Expression):
     token: Token
     value: str
@@ -44,7 +44,7 @@ class Identifier(Expression):
         return self.__str__()
 
 
-@dataclass
+@dataclass(frozen=True)
 class LetStatement(Statement):
     token: Token
     name: Identifier
@@ -66,7 +66,7 @@ class LetStatement(Statement):
         return self.__str__()
 
 
-@dataclass
+@dataclass(frozen=True)
 class ReturnStatement(Statement):
     token: Token
     return_value: Expression
@@ -87,7 +87,7 @@ class ReturnStatement(Statement):
         return self.__str__()
 
 
-@dataclass
+@dataclass(frozen=True)
 class ExpressionStatement(Statement):
     token: Token
     expression: Expression
@@ -107,7 +107,7 @@ class ExpressionStatement(Statement):
         return self.__str__()
 
 
-@dataclass
+@dataclass(frozen=True)
 class IntegerLiteral(Expression):
     token: Token
     value: int
@@ -125,7 +125,7 @@ class IntegerLiteral(Expression):
         return self.__str__()
 
 
-@dataclass
+@dataclass(frozen=True)
 class PrefixExpression(Expression):
     token: Token
     operator: str
@@ -144,7 +144,7 @@ class PrefixExpression(Expression):
         return self.__str__()
 
 
-@dataclass
+@dataclass(frozen=True)
 class InfixExpression(Expression):
     token: Token
     left: Expression
@@ -164,7 +164,7 @@ class InfixExpression(Expression):
         return self.__str__()
 
 
-@dataclass
+@dataclass(frozen=True)
 class BooleanExpression(Expression):
     token: Token
     value: bool
@@ -200,7 +200,7 @@ class BlockStatement(Expression):
         return "".join(str(s) for s in self.statements)
 
 
-@dataclass
+@dataclass(frozen=True)
 class IfExpression(Expression):
     token: Token
     condition: Expression
@@ -220,7 +220,7 @@ class IfExpression(Expression):
         return f"if{self.condition}{self.consequence}{self.alternative}"
 
 
-@dataclass
+@dataclass(frozen=True)
 class FunctionLiteral(Expression):
     token: Token
     parameters: list[Identifier]
@@ -240,7 +240,7 @@ class FunctionLiteral(Expression):
         return f"{self.token_literal()}({params}){self.body}"
 
 
-@dataclass
+@dataclass(frozen=True)
 class CallExpression(Expression):
     token: Token
     function: FunctionLiteral | Identifier
@@ -260,7 +260,7 @@ class CallExpression(Expression):
         return f"{str(self.function)}({args})"
 
 
-@dataclass
+@dataclass(frozen=True)
 class StringLiteral(Expression):
     token: Token
     value: str
@@ -278,7 +278,7 @@ class StringLiteral(Expression):
         return self.token.literal
 
 
-@dataclass
+@dataclass(frozen=True)
 class ArrayLiteral(Expression):
     token: Token
     elements: list[Expression]
@@ -297,7 +297,7 @@ class ArrayLiteral(Expression):
         return f"[{elements}]"
 
 
-@dataclass
+@dataclass(frozen=True)
 class IndexExpression(Expression):
     token: Token
     left: Expression
@@ -314,6 +314,28 @@ class IndexExpression(Expression):
 
     def __str__(self):
         return f"({self.left}[{self.index}])"
+
+
+@dataclass(frozen=True)
+class HashLiteral(Expression):
+    token: Token
+    pairs: dict[Expression, Expression]
+
+    def expression_node(self):
+        return None
+
+    def token_literal(self):
+        return self.token.literal
+
+    def __repr__(self):
+        return self.__str__()
+
+    def __str__(self):
+        pairs = []
+        for key, val in self.pairs.items():
+            pairs.append(f"{key}: {val}")
+        pairs = ", ".join(pairs)
+        return f"{{{pairs}}}"
 
 
 @dataclass

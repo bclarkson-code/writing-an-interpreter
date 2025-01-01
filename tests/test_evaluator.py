@@ -6,6 +6,7 @@ from writing_an_interpreter.objects import (
     Boolean,
     Error,
     Function,
+    Hash,
     Integer,
     Null,
     Object,
@@ -135,6 +136,7 @@ def test_error_handling():
         ),
         ("foobar", "identifier not found: foobar"),
         ('"Hello" - "World"', "unknown operator: STRING - STRING"),
+        ('{"name": "Monkey"}[fn(x) { x }];', "unusable as hash key: FUNCTION"),
     ]
     for string, want in tests:
         got = run_eval(string)
@@ -262,6 +264,56 @@ def test_can_eval_array_index_expressions():
         ("let myArray = [1, 2, 3]; let i = myArray[0]; myArray[i]", 2),
         ("[1, 2, 3][3]", None),
         ("[1, 2, 3][-1]", None),
+    ]
+
+    for string, want in tests:
+        got = run_eval(string)
+        if isinstance(want, int):
+            assert is_integer_object_valid(got, want)
+        else:
+            assert is_null_object_valid(got)
+
+
+def test_can_eval_hash_literals():
+    string = """let two = "two"; 
+{ 
+    "one": 10 - 9, 
+    two: 1 + 1, 
+    "thr" + "ee": 6 / 2, 
+    4: 4, 
+    true: 5, 
+    false: 6 
+}
+    """
+    got = run_eval(string)
+    assert isinstance(got, Hash)
+    assert len(got.pairs) == 6
+
+    want = {
+        String("one").hash(): 1,
+        String("two").hash(): 2,
+        String("three").hash(): 3,
+        Integer(4).hash(): 4,
+        Boolean(True).hash(): 5,
+        Boolean(False).hash(): 6,
+    }
+
+    for (got_key, got_val), (want_key, want_val) in zip(
+        got.pairs.items(), want.items()
+    ):
+        assert got_key == want_key
+        assert got_val.value.value == want_val
+
+
+def test_can_eval_hash_indexes():
+    tests = [
+        ('{"foo": 5}["foo"]', 5),
+        ('{"foo": 5}["bar"]', None),
+        ('let key = "foo"; {"foo": 5}[key]', 5),
+        ('{}["foo"]', None),
+        ("{5: 5}[5]", 5),
+        ("{true: 5}[true]", 5),
+        ("{false: 5}[false]", 5),
     ]
 
     for string, want in tests:

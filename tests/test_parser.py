@@ -5,6 +5,7 @@ from writing_an_interpreter.ast import (
     Expression,
     ExpressionStatement,
     FunctionLiteral,
+    HashLiteral,
     Identifier,
     IfExpression,
     IndexExpression,
@@ -484,6 +485,140 @@ def test_can_parse_index_expression():
 
     assert is_identifier_valid(index_expression.left, "myArray")
     assert is_infix_expression_valid(index_expression.index, 1, "+", 1)
+
+
+def test_can_parse_hash_literal_string_key():
+    string = '{"one": 1, "two": 2, "three": 3}'
+
+    lexer = Lexer(string)
+    parser = Parser(lexer)
+
+    program = parser.parse_program()
+    assert not parser.errors
+
+    assert len(program) == 1
+
+    [statement] = program.statements
+    assert isinstance(statement, ExpressionStatement)
+
+    hash_literal = statement.expression
+    assert isinstance(hash_literal, HashLiteral)
+
+    assert len(hash_literal.pairs) == 3
+
+    expected = {"one": 1, "two": 2, "three": 3}
+
+    for key, val in hash_literal.pairs.items():
+        assert key.value in expected
+        assert is_integer_literal_valid(val, expected[key.value])
+
+
+def test_can_parse_hash_literal_bool_key():
+
+    string = "{true: 1, false: 2}"
+
+    lexer = Lexer(string)
+    parser = Parser(lexer)
+
+    program = parser.parse_program()
+    assert not parser.errors
+
+    assert len(program) == 1
+
+    [statement] = program.statements
+    assert isinstance(statement, ExpressionStatement)
+
+    hash_literal = statement.expression
+    assert isinstance(hash_literal, HashLiteral)
+
+    assert len(hash_literal.pairs) == 2
+
+    expected = {True: 1, False: 2}
+
+    for key, val in hash_literal.pairs.items():
+        assert key.value in expected
+        assert is_integer_literal_valid(val, expected[key.value])
+
+
+def test_can_parse_hash_literal_integer_key():
+
+    string = "{1: 1, 2: 2}"
+
+    lexer = Lexer(string)
+    parser = Parser(lexer)
+
+    program = parser.parse_program()
+    assert not parser.errors
+
+    assert len(program) == 1
+
+    [statement] = program.statements
+    assert isinstance(statement, ExpressionStatement)
+
+    hash_literal = statement.expression
+    assert isinstance(hash_literal, HashLiteral)
+
+    assert len(hash_literal.pairs) == 2
+
+    expected = {1: 1, 2: 2}
+
+    for key, val in hash_literal.pairs.items():
+        assert key.value in expected
+        assert is_integer_literal_valid(val, expected[key.value])
+
+
+def test_can_parse_empty_hash_literal():
+    string = "{}"
+
+    lexer = Lexer(string)
+    parser = Parser(lexer)
+
+    program = parser.parse_program()
+    assert not parser.errors
+
+    assert len(program) == 1
+
+    [statement] = program.statements
+    assert isinstance(statement, ExpressionStatement)
+
+    hash_literal = statement.expression
+    assert isinstance(hash_literal, HashLiteral)
+
+    assert hash_literal.pairs == {}
+
+
+def test_can_parse_hash_literal_mixed_keys():
+    string = '{"one": 0 + 1, "two": 10 - 8, "three": 15 / 5}'
+
+    lexer = Lexer(string)
+    parser = Parser(lexer)
+
+    program = parser.parse_program()
+    assert not parser.errors
+
+    assert len(program) == 1
+
+    [statement] = program.statements
+    assert isinstance(statement, ExpressionStatement)
+
+    hash_literal = statement.expression
+    assert isinstance(hash_literal, HashLiteral)
+
+    assert len(hash_literal.pairs) == 3
+
+    pairs = hash_literal.pairs
+
+    keys = [
+        StringLiteral(token=Token(literal="one", type=TokenType.STRING), value="one"),
+        StringLiteral(token=Token(literal="two", type=TokenType.STRING), value="two"),
+        StringLiteral(
+            token=Token(literal="three", type=TokenType.STRING), value="three"
+        ),
+    ]
+
+    assert is_infix_expression_valid(pairs[keys[0]], 0, "+", 1)
+    assert is_infix_expression_valid(pairs[keys[1]], 10, "-", 8)
+    assert is_infix_expression_valid(pairs[keys[2]], 15, "/", 5)
 
 
 # -------helper functions-------

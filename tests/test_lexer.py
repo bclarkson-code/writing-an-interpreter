@@ -113,6 +113,7 @@ if (5 < 10) {
 "foobar"
 "foo bar"
 [1, 2];
+{"foo": "bar"}
 """
     want = [
         Token(TokenType.LET, "let"),
@@ -196,6 +197,11 @@ if (5 < 10) {
         Token(TokenType.INT, "2"),
         Token(TokenType.RBRACKET, "]"),
         Token(TokenType.SEMICOLON, ";"),
+        Token(TokenType.LBRACE, "{"),
+        Token(TokenType.STRING, "foo"),
+        Token(TokenType.COLON, ":"),
+        Token(TokenType.STRING, "bar"),
+        Token(TokenType.RBRACE, "}"),
         Token(TokenType.EOF, ""),
     ]
 

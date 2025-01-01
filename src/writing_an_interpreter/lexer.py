@@ -54,6 +54,8 @@ class Lexer:
                 token = Token(TokenType.COMMA, self.current)
             case ";":
                 token = Token(TokenType.SEMICOLON, self.current)
+            case ":":
+                token = Token(TokenType.COLON, self.current)
             case "(":
                 token = Token(TokenType.LPAREN, self.current)
             case ")":

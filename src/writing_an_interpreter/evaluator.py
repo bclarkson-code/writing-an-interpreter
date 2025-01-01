@@ -8,6 +8,7 @@ from writing_an_interpreter.ast import (
     Expression,
     ExpressionStatement,
     FunctionLiteral,
+    HashLiteral,
     Identifier,
     IfExpression,
     IndexExpression,
@@ -27,12 +28,16 @@ from writing_an_interpreter.objects import (
     Builtin,
     Error,
     Function,
+    Hash,
+    HashKey,
+    HashPair,
     Integer,
     Null,
     Object,
     ObjectType,
     ReturnValue,
     String,
+    is_hashable,
 )
 
 TRUE = Boolean(True)
@@ -114,6 +119,8 @@ def monkey_eval(node: Node, environment: Environment) -> Object:
                 return index_
 
             return eval_index_expression(left, index_)
+        case HashLiteral():
+            return eval_hash_literal(node, environment)
         case _:
             return None
 
@@ -283,6 +290,8 @@ def eval_expressions(
 def eval_index_expression(left: Object, index_: Object) -> Object:
     if left.type == ObjectType.ARRAY and index_.type == ObjectType.INTEGER:
         return eval_array_index_expression(left, index_)
+    elif left.type == ObjectType.HASH:
+        return eval_hash_index_expression(left, index_)
     else:
         return new_error(
             "index operator not supported: {left_type}", left_type=left.type
@@ -297,6 +306,16 @@ def eval_array_index_expression(array: Array, index_: Integer) -> Object:
         return NULL
 
     return array.elements[idx]
+
+
+def eval_hash_index_expression(hash_obj: Hash, index_: Integer) -> Object:
+    if not is_hashable(index_):
+        return new_error("unusable as hash key: {index_type}", index_type=index_.type)
+    hash_key = index_.hash()
+    if hash_key not in hash_obj.pairs:
+        return NULL
+
+    return hash_obj.pairs[hash_key].value
 
 
 def apply_function(function: Function, args: list[Object]):
@@ -343,6 +362,26 @@ def is_error(obj: Object) -> bool:
         return False
 
     return obj.type == ObjectType.ERROR
+
+
+def eval_hash_literal(node, environment: Environment):
+    pairs = {}
+
+    for key, val in node.pairs.items():
+        key = monkey_eval(key, environment)
+        if is_error(key):
+            return key
+
+        if not is_hashable(key):
+            return new_error("unusable as hash key: {key_type}", key_type=type(key))
+        hashed = key.hash()
+
+        val = monkey_eval(val, environment)
+        if is_error(val):
+            return val
+
+        pairs[hashed] = HashPair(key=key, value=val)
+    return Hash(pairs=pairs)
 
 
 # ------builtins--------
@@ -425,10 +464,17 @@ def run_push(*args):
     return Array(elements=elements)
 
 
+def run_puts(*args):
+    for arg in args:
+        print(arg.inspect())
+    return NULL
+
+
 builtins = {
     "len": Builtin(run_len),
     "first": Builtin(run_first),
     "last": Builtin(run_last),
     "rest": Builtin(run_rest),
     "push": Builtin(run_push),
+    "puts": Builtin(run_puts),
 }

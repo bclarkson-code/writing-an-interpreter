@@ -26,6 +26,7 @@ class TokenType(str, Enum):
     # Delimiters
     COMMA = ","
     SEMICOLON = ";"
+    COLON = ":"
     LPAREN = "("
     RPAREN = ")"
     LBRACE = "{"
@@ -42,11 +43,17 @@ class TokenType(str, Enum):
     ELSE = "ELSE"
     RETURN = "RETURN"
 
+    def __hash__(self):
+        return hash(self.value)
+
 
 @dataclass
 class Token:
     type: TokenType
     literal: str
+
+    def __hash__(self):
+        return hash((self.type, self.literal))
 
 
 keywords = {
