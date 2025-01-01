@@ -21,6 +21,8 @@ class Lexer:
 
     def next_token(self):
         self.skip_whitespace()
+        if self.current == "#":
+            self.skip_comments()
         match self.current:
             case "=":
                 if self.peek_char() == "=":
@@ -126,6 +128,10 @@ class Lexer:
 
     def skip_whitespace(self):
         while self.current in {" ", "\n", "\t", "\r"}:
+            self.read_char()
+
+    def skip_comments(self):
+        while self.read_position < len(self.inputs) and self.current != "\n":
             self.read_char()
 
     def peek_char(self):

@@ -1,0 +1,30 @@
+let map = fn(arr, func) {
+    let iter = fn(arr, acc) {
+		if (len(arr) == 0) {
+		    acc
+		} else {
+		    let current = func(first(arr));
+			let acc = push(acc, current);
+			iter(rest(arr), acc)
+		};
+	};
+	iter(arr, [])
+};
+
+let reduce = fn(arr, initial, func) {
+    let iter = fn(arr, result) {
+	    if (len(arr) == 0) {
+		    result
+		} else {
+		    let result = func(result, first(arr));
+			iter(rest(arr), result)
+		}
+	}
+	iter(arr, initial)
+}
+
+let sum = fn(arr) {
+    let add = fn(x, y) {x + y};
+	reduce(arr, 0, add)
+}
+
