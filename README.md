@@ -39,7 +39,7 @@ let add = fn(a, b) { return a + b; };
 let myArray = [1, 2, 3, 4, 5];
 
 // Using hash maps
-let thorsten = {"name": "Thorsten", "age": 28};
+let ben = {"name": "Ben", "age": 27};
 
 // Higher order functions
 let twice = fn(f, x) {
@@ -58,7 +58,7 @@ twice(addTwo, 2); // => 6
 
 ### Prerequisites
 
-- Python 3.9 or higher
+- Python 3.10 or higher
 - pytest (for running tests)
 
 ### Installation
