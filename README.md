@@ -65,7 +65,7 @@ twice(addTwo, 2); // => 6
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/monkey-python.git
+git clone https://github.com/bclarkson-code/writing-an-interpreter.git
 cd monkey-python
 ```
 
