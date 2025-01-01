@@ -396,6 +396,8 @@ def run_len(*args):
             return Integer(value=len(arg.value))
         case Array():
             return Integer(value=len(arg.elements))
+        case Hash():
+            return Integer(value=len(arg.pairs))
         case _:
             return new_error("argument to 'len' not supported, got {arg}", arg=arg.type)
 
@@ -470,6 +472,55 @@ def run_puts(*args):
     return NULL
 
 
+def run_contains(*args):
+    if len(args) != 2:
+        return new_error(
+            "wrong number of arguments. got={argslen}, want=2", argslen=len(args)
+        )
+
+    [hash_, val] = args
+    if hash_.type != ObjectType.HASH:
+        return new_error(
+            "argument to 'contains' must be HASH, got {arg}", arg=hash_.type
+        )
+
+    if not is_hashable(val):
+        return new_error("unusable as hash key: {index_type}", index_type=val.type)
+
+    if val.hash() in hash_.pairs:
+        return Boolean(True)
+    else:
+        return Boolean(False)
+
+
+def run_keys(*args):
+    if len(args) != 1:
+        return new_error(
+            "wrong number of arguments. got={argslen}, want=1", argslen=len(args)
+        )
+
+    [hash_] = args
+    if hash_.type != ObjectType.HASH:
+        return new_error("argument to 'keys' must be HASH, got {arg}", arg=hash_.type)
+
+    elements = [pair.key for pair in hash_.pairs.values()]
+    return Array(elements=elements)
+
+
+def run_values(*args):
+    if len(args) != 1:
+        return new_error(
+            "wrong number of arguments. got={argslen}, want=1", argslen=len(args)
+        )
+
+    [hash_] = args
+    if hash_.type != ObjectType.HASH:
+        return new_error("argument to 'values' must be HASH, got {arg}", arg=hash_.type)
+
+    elements = [pair.value for pair in hash_.pairs.values()]
+    return Array(elements=elements)
+
+
 builtins = {
     "len": Builtin(run_len),
     "first": Builtin(run_first),
@@ -477,4 +528,7 @@ builtins = {
     "rest": Builtin(run_rest),
     "push": Builtin(run_push),
     "puts": Builtin(run_puts),
+    "contains": Builtin(run_contains),
+    "keys": Builtin(run_keys),
+    "values": Builtin(run_values),
 }

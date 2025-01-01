@@ -202,6 +202,7 @@ def test_can_eval_builtin_functions():
         ('len("")', 0),
         ('len("four")', 4),
         ('len("hello world")', 11),
+        ("len({1:1, 2:2})", 2),
         ("len(1)", "argument to 'len' not supported, got INTEGER"),
         ('len("one", "two")', "wrong number of arguments. got=2, want=1"),
         ("len([1,2,3])", 3),
@@ -218,6 +219,18 @@ def test_can_eval_builtin_functions():
         ("push([1,2], 3)", Array([Integer(1), Integer(2), Integer(3)])),
         ("push([])", "wrong number of arguments. got=1, want=2"),
         ("push(1, 1)", "argument to 'push' must be ARRAY, got INTEGER"),
+        ("contains({}, 1)", Boolean(False)),
+        ("contains({1: 1}, 1)", Boolean(True)),
+        ("contains({})", "wrong number of arguments. got=1, want=2"),
+        ("contains(1, 1)", "argument to 'contains' must be HASH, got INTEGER"),
+        ("keys({})", Array([])),
+        ("keys({1:1, 2:2})", Array([Integer(1), Integer(2)])),
+        ("keys()", "wrong number of arguments. got=0, want=1"),
+        ("keys(1)", "argument to 'keys' must be HASH, got INTEGER"),
+        ("values({})", Array([])),
+        ("values({1:1, 2:2})", Array([Integer(1), Integer(2)])),
+        ("values()", "wrong number of arguments. got=0, want=1"),
+        ("values(1)", "argument to 'values' must be HASH, got INTEGER"),
     ]
 
     for string, want in tests:
