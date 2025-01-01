@@ -2,6 +2,7 @@ from enum import IntEnum, auto
 from typing import Callable
 
 from writing_an_interpreter.ast import (
+    ArrayLiteral,
     BlockStatement,
     BooleanExpression,
     CallExpression,
@@ -10,6 +11,7 @@ from writing_an_interpreter.ast import (
     FunctionLiteral,
     Identifier,
     IfExpression,
+    IndexExpression,
     InfixExpression,
     IntegerLiteral,
     LetStatement,
@@ -36,6 +38,7 @@ class Precedence(IntEnum):
     PRODUCT = auto()  # *
     PREFIX = auto()  # -X or !X
     CALL = auto()  # myFunction(X)
+    INDEX = auto()  # myArray[X]
 
 
 precedences = {
@@ -48,6 +51,7 @@ precedences = {
     TokenType.SLASH: Precedence.PRODUCT,
     TokenType.ASTERISK: Precedence.PRODUCT,
     TokenType.LPAREN: Precedence.CALL,
+    TokenType.LBRACKET: Precedence.INDEX,
 }
 
 
@@ -77,6 +81,7 @@ class Parser:
         self.register_prefix(TokenType.IF, self.parse_if_expression)
         self.register_prefix(TokenType.FUNCTION, self.parse_function_literal)
         self.register_prefix(TokenType.STRING, self.parse_string_literal)
+        self.register_prefix(TokenType.LBRACKET, self.parse_array_literal)
 
         self.infix_parse_functions = {}
         self.register_infix(TokenType.PLUS, self.parse_infix_expression)
@@ -88,6 +93,7 @@ class Parser:
         self.register_infix(TokenType.LT, self.parse_infix_expression)
         self.register_infix(TokenType.GT, self.parse_infix_expression)
         self.register_infix(TokenType.LPAREN, self.parse_call_expression)
+        self.register_infix(TokenType.LBRACKET, self.parse_index_expression)
 
     def next_token(self):
         self.token = self.next
@@ -331,29 +337,45 @@ class Parser:
 
     def parse_call_expression(self, function: FunctionLiteral | Identifier):
         token = self.token
-        arguments = self.parse_call_arguments()
+        arguments = self.parse_expression_list(TokenType.RPAREN)
         return CallExpression(token=token, function=function, arguments=arguments)
-
-    def parse_call_arguments(self):
-        arguments = []
-
-        if self.peek_token_is(TokenType.RPAREN):
-            self.next_token()
-            return arguments
-
-        self.next_token()
-        arguments.append(self.parse_expression(Precedence.LOWEST))
-
-        while self.peek_token_is(TokenType.COMMA):
-            self.next_token()
-            self.next_token()
-            arguments.append(self.parse_expression(Precedence.LOWEST))
-
-        if not self.expect_peek(TokenType.RPAREN):
-            return None
-
-        return arguments
 
     def parse_string_literal(self):
         token = self.token
         return StringLiteral(token=token, value=token.literal)
+
+    def parse_array_literal(self):
+        token = self.token
+        elements = self.parse_expression_list(TokenType.RBRACKET)
+        return ArrayLiteral(token=token, elements=elements)
+
+    def parse_expression_list(self, end: TokenType):
+        output = []
+
+        if self.peek_token_is(end):
+            self.next_token()
+            return output
+
+        self.next_token()
+        output.append(self.parse_expression(Precedence.LOWEST))
+
+        while self.peek_token_is(TokenType.COMMA):
+            self.next_token()
+            self.next_token()
+            output.append(self.parse_expression(Precedence.LOWEST))
+
+        if not self.expect_peek(end):
+            return None
+
+        return output
+
+    def parse_index_expression(self, left: Expression):
+        token = self.token
+
+        self.next_token()
+        index_ = self.parse_expression(Precedence.LOWEST)
+
+        if not self.expect_peek(TokenType.RBRACKET):
+            return None
+
+        return IndexExpression(token, left=left, index=index_)

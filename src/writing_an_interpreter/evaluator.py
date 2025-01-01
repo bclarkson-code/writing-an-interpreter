@@ -1,4 +1,7 @@
+from copy import deepcopy
+
 from writing_an_interpreter.ast import (
+    ArrayLiteral,
     BlockStatement,
     BooleanExpression,
     CallExpression,
@@ -7,6 +10,7 @@ from writing_an_interpreter.ast import (
     FunctionLiteral,
     Identifier,
     IfExpression,
+    IndexExpression,
     InfixExpression,
     IntegerLiteral,
     LetStatement,
@@ -18,6 +22,7 @@ from writing_an_interpreter.ast import (
 )
 from writing_an_interpreter.environment import Environment
 from writing_an_interpreter.objects import (
+    Array,
     Boolean,
     Builtin,
     Error,
@@ -92,7 +97,23 @@ def monkey_eval(node: Node, environment: Environment) -> Object:
 
         case StringLiteral():
             return String(value=node.value)
+        case ArrayLiteral():
+            elements = eval_expressions(node.elements, environment)
 
+            if len(elements) == 1 and is_error(elements[0]):
+                return elements[0]
+
+            return Array(elements=elements)
+        case IndexExpression():
+            left = monkey_eval(node.left, environment)
+            if is_error(left):
+                return left
+
+            index_ = monkey_eval(node.index, environment)
+            if is_error(index_):
+                return index_
+
+            return eval_index_expression(left, index_)
         case _:
             return None
 
@@ -259,6 +280,25 @@ def eval_expressions(
     return result
 
 
+def eval_index_expression(left: Object, index_: Object) -> Object:
+    if left.type == ObjectType.ARRAY and index_.type == ObjectType.INTEGER:
+        return eval_array_index_expression(left, index_)
+    else:
+        return new_error(
+            "index operator not supported: {left_type}", left_type=left.type
+        )
+
+
+def eval_array_index_expression(array: Array, index_: Integer) -> Object:
+    idx = index_.value
+    max_idx = len(array.elements) - 1
+
+    if idx < 0 or idx > max_idx:
+        return NULL
+
+    return array.elements[idx]
+
+
 def apply_function(function: Function, args: list[Object]):
     match function:
         case Function():
@@ -315,8 +355,80 @@ def run_len(*args):
     match arg:
         case String():
             return Integer(value=len(arg.value))
+        case Array():
+            return Integer(value=len(arg.elements))
         case _:
             return new_error("argument to 'len' not supported, got {arg}", arg=arg.type)
 
 
-builtins = {"len": Builtin(run_len)}
+def run_first(*args):
+    if len(args) != 1:
+        return new_error(
+            "wrong number of arguments. got={argslen}, want=1", argslen=len(args)
+        )
+
+    [arg] = args
+    if arg.type != ObjectType.ARRAY:
+        return new_error("argument to 'first' must be ARRAY, got {arg}", arg=arg.type)
+
+    if len(arg.elements) > 0:
+        return arg.elements[0]
+
+    return NULL
+
+
+def run_last(*args):
+    if len(args) != 1:
+        return new_error(
+            "wrong number of arguments. got={argslen}, want=1", argslen=len(args)
+        )
+
+    [arr] = args
+    if arr.type != ObjectType.ARRAY:
+        return new_error("argument to 'last' must be ARRAY, got {arg}", arg=arr.type)
+
+    if len(arr.elements) > 0:
+        return arr.elements[-1]
+
+    return NULL
+
+
+def run_rest(*args):
+    if len(args) != 1:
+        return new_error(
+            "wrong number of arguments. got={argslen}, want=1", argslen=len(args)
+        )
+
+    [arr] = args
+    if arr.type != ObjectType.ARRAY:
+        return new_error("argument to 'rest' must be ARRAY, got {arg}", arg=arr.type)
+
+    if len(arr.elements) > 0:
+        elements = deepcopy(arr.elements[1:])
+        return Array(elements=elements)
+
+    return NULL
+
+
+def run_push(*args):
+    if len(args) != 2:
+        return new_error(
+            "wrong number of arguments. got={argslen}, want=2", argslen=len(args)
+        )
+
+    [arr, val] = args
+    if arr.type != ObjectType.ARRAY:
+        return new_error("argument to 'push' must be ARRAY, got {arg}", arg=arr.type)
+
+    elements = deepcopy(arr.elements)
+    elements.append(val)
+    return Array(elements=elements)
+
+
+builtins = {
+    "len": Builtin(run_len),
+    "first": Builtin(run_first),
+    "last": Builtin(run_last),
+    "rest": Builtin(run_rest),
+    "push": Builtin(run_push),
+}

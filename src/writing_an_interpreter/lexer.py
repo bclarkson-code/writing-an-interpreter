@@ -60,6 +60,10 @@ class Lexer:
                 token = Token(TokenType.LBRACE, self.current)
             case "}":
                 token = Token(TokenType.RBRACE, self.current)
+            case "[":
+                token = Token(TokenType.LBRACKET, self.current)
+            case "]":
+                token = Token(TokenType.RBRACKET, self.current)
             case "":
                 token = Token(TokenType.EOF, "")
             case '"':

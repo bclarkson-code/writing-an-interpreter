@@ -1,10 +1,21 @@
-from writing_an_interpreter.ast import (BooleanExpression, CallExpression,
-                                        Expression, ExpressionStatement,
-                                        FunctionLiteral, Identifier,
-                                        IfExpression, InfixExpression,
-                                        IntegerLiteral, LetStatement,
-                                        PrefixExpression, Program,
-                                        ReturnStatement, StringLiteral)
+from writing_an_interpreter.ast import (
+    ArrayLiteral,
+    BooleanExpression,
+    CallExpression,
+    Expression,
+    ExpressionStatement,
+    FunctionLiteral,
+    Identifier,
+    IfExpression,
+    IndexExpression,
+    InfixExpression,
+    IntegerLiteral,
+    LetStatement,
+    PrefixExpression,
+    Program,
+    ReturnStatement,
+    StringLiteral,
+)
 from writing_an_interpreter.lexer import Lexer
 from writing_an_interpreter.parser import ParseError, Parser
 from writing_an_interpreter.tokens import Token, TokenType
@@ -251,6 +262,11 @@ def test_operator_precedence_is_correct():
             "add(a, b, 1, (2 * 3), (4 + 5), add(6, (7 * 8)))",
         ),
         ("add(a + b + c * d / f + g)", "add((((a + b) + ((c * d) / f)) + g))"),
+        ("a * [1, 2, 3, 4][b * c] * d", "((a * ([1, 2, 3, 4][(b * c)])) * d)"),
+        (
+            "add(a * b[2], b[1], 2 * [1, 2][1])",
+            "add((a * (b[2])), (b[1]), (2 * ([1, 2][1])))",
+        ),
     ]
 
     for string, expected in tests:
@@ -421,6 +437,53 @@ def test_can_parse_string_literal():
     assert isinstance(string_literal, StringLiteral)
 
     assert string_literal.value == "hello world"
+
+
+def test_can_parse_array_literal():
+    string = "[1, 2 * 2, 3 + 3]"
+
+    lexer = Lexer(string)
+    parser = Parser(lexer)
+
+    program = parser.parse_program()
+    assert not parser.errors
+
+    assert len(program) == 1
+
+    [statement] = program.statements
+    assert isinstance(statement, ExpressionStatement)
+
+    array = statement.expression
+    assert isinstance(array, ArrayLiteral)
+
+    assert len(array.elements) == 3
+
+    first, second, third = array.elements
+
+    assert is_integer_literal_valid(first, 1)
+    assert is_infix_expression_valid(second, 2, "*", 2)
+    assert is_infix_expression_valid(third, 3, "+", 3)
+
+
+def test_can_parse_index_expression():
+    string = "myArray[1 + 1]"
+
+    lexer = Lexer(string)
+    parser = Parser(lexer)
+
+    program = parser.parse_program()
+    assert not parser.errors
+
+    assert len(program) == 1
+
+    [statement] = program.statements
+    assert isinstance(statement, ExpressionStatement)
+
+    index_expression = statement.expression
+    assert isinstance(index_expression, IndexExpression)
+
+    assert is_identifier_valid(index_expression.left, "myArray")
+    assert is_infix_expression_valid(index_expression.index, 1, "+", 1)
 
 
 # -------helper functions-------

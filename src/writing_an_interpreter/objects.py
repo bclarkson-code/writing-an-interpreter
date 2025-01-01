@@ -16,6 +16,7 @@ class ObjectType(str, Enum):
     FUNCTION = "FUNCTION"
     STRING = "STRING"
     BUILTIN = "BUILTIN"
+    ARRAY = "ARRAY"
 
 
 class Object:
@@ -107,3 +108,13 @@ class Builtin(Object):
 
     def inspect(self):
         return "builtin function"
+
+
+@dataclass
+class Array(Object):
+    elements: list[Object]
+    type: ObjectType = ObjectType.ARRAY
+
+    def inspect(self):
+        elements = ", ".join(e.inspect() for e in self.elements)
+        return f"[{elements}]"

@@ -2,6 +2,7 @@ from writing_an_interpreter.environment import Environment
 from writing_an_interpreter.evaluator import monkey_eval
 from writing_an_interpreter.lexer import Lexer
 from writing_an_interpreter.objects import (
+    Array,
     Boolean,
     Error,
     Function,
@@ -201,6 +202,20 @@ def test_can_eval_builtin_functions():
         ('len("hello world")', 11),
         ("len(1)", "argument to 'len' not supported, got INTEGER"),
         ('len("one", "two")', "wrong number of arguments. got=2, want=1"),
+        ("len([1,2,3])", 3),
+        ("first([1,2,3])", 1),
+        ("first([], [1])", "wrong number of arguments. got=2, want=1"),
+        ("first(1)", "argument to 'first' must be ARRAY, got INTEGER"),
+        ("last([1,2,3])", 3),
+        ("last([], [1])", "wrong number of arguments. got=2, want=1"),
+        ("last(1)", "argument to 'last' must be ARRAY, got INTEGER"),
+        ("rest([1,2,3])", Array([Integer(2), Integer(3)])),
+        ("rest([], [1])", "wrong number of arguments. got=2, want=1"),
+        ("rest(1)", "argument to 'rest' must be ARRAY, got INTEGER"),
+        ("push([], 1)", Array([Integer(1)])),
+        ("push([1,2], 3)", Array([Integer(1), Integer(2), Integer(3)])),
+        ("push([])", "wrong number of arguments. got=1, want=2"),
+        ("push(1, 1)", "argument to 'push' must be ARRAY, got INTEGER"),
     ]
 
     for string, want in tests:
@@ -211,6 +226,50 @@ def test_can_eval_builtin_functions():
             case str():
                 assert isinstance(got, Error)
                 assert got.message == want
+
+
+def test_can_build_array_literal():
+    string = "[1, 2 * 2, 3 + 3]"
+
+    got = run_eval(string)
+    assert isinstance(got, Array)
+    assert len(got.elements) == 3
+
+    first, second, third = got.elements
+
+    assert is_integer_object_valid(first, 1)
+    assert is_integer_object_valid(second, 4)
+    assert is_integer_object_valid(third, 6)
+
+
+def test_can_build_empty_array_literal():
+    string = "[];"
+
+    got = run_eval(string)
+    assert isinstance(got, Array)
+    assert len(got.elements) == 0
+
+
+def test_can_eval_array_index_expressions():
+    tests = [
+        ("[1, 2, 3][0]", 1),
+        ("[1, 2, 3][1]", 2),
+        ("[1, 2, 3][2]", 3),
+        ("let i = 0; [1][i];", 1),
+        ("[1, 2, 3][1 + 1];", 3),
+        ("let myArray = [1, 2, 3]; myArray[2];", 3),
+        ("let myArray = [1, 2, 3]; myArray[0] + myArray[1] + myArray[2];", 6),
+        ("let myArray = [1, 2, 3]; let i = myArray[0]; myArray[i]", 2),
+        ("[1, 2, 3][3]", None),
+        ("[1, 2, 3][-1]", None),
+    ]
+
+    for string, want in tests:
+        got = run_eval(string)
+        if isinstance(want, int):
+            assert is_integer_object_valid(got, want)
+        else:
+            assert is_null_object_valid(got)
 
 
 # --------helper functions---------

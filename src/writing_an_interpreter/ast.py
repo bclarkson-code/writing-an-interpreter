@@ -279,6 +279,44 @@ class StringLiteral(Expression):
 
 
 @dataclass
+class ArrayLiteral(Expression):
+    token: Token
+    elements: list[Expression]
+
+    def expression_node(self):
+        return None
+
+    def token_literal(self):
+        return self.token.literal
+
+    def __repr__(self):
+        return self.__str__()
+
+    def __str__(self):
+        elements = ", ".join(str(a) for a in self.elements)
+        return f"[{elements}]"
+
+
+@dataclass
+class IndexExpression(Expression):
+    token: Token
+    left: Expression
+    index: Expression
+
+    def expression_node(self):
+        return None
+
+    def token_literal(self):
+        return self.token.literal
+
+    def __repr__(self):
+        return self.__str__()
+
+    def __str__(self):
+        return f"({self.left}[{self.index}])"
+
+
+@dataclass
 class Program(Sequence):
     statements: list[Statement]
 
