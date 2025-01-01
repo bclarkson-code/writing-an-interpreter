@@ -1,6 +1,14 @@
+from writing_an_interpreter.environment import Environment
 from writing_an_interpreter.evaluator import monkey_eval
 from writing_an_interpreter.lexer import Lexer
-from writing_an_interpreter.objects import Boolean, Error, Integer, Null, Object
+from writing_an_interpreter.objects import (
+    Boolean,
+    Error,
+    Function,
+    Integer,
+    Null,
+    Object,
+)
 from writing_an_interpreter.parser import Parser
 
 
@@ -165,15 +173,40 @@ def test_can_eval_let_statements():
         assert is_integer_object_valid(got, want)
 
 
+def test_can_build_function_object():
+    string = "fn(x) { x + 2; };"
+
+    got = run_eval(string)
+    assert isinstance(got, Function)
+    assert str(got.parameters) == "[x]"
+    assert str(got.body) == "(x + 2)"
+
+
+def test_can_eval_function_application_statements():
+    tests = [
+        ("let identity = fn(x) { x; }; identity(5);", 5),
+        ("let identity = fn(x) { return x; }; identity(5);", 5),
+        ("let double = fn(x) { x * 2; }; double(5);", 10),
+        ("let add = fn(x, y) { x + y; }; add(5, 5);", 10),
+        ("let add = fn(x, y) { x + y; }; add(5 + 5, add(5, 5));", 20),
+        ("fn(x) { x; }(5)", 5),
+    ]
+
+    for string, want in tests:
+        got = run_eval(string)
+        assert is_integer_object_valid(got, want)
+
+
 # --------helper functions---------
 def run_eval(string: str) -> Object:
+    environment = Environment()
     lexer = Lexer(string)
     parser = Parser(lexer)
 
     program = parser.parse_program()
     assert not parser.errors
 
-    return monkey_eval(program)
+    return monkey_eval(program, environment)
 
 
 def is_integer_object_valid(got: Integer, want: int):

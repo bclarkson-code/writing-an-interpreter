@@ -1,3 +1,4 @@
+from writing_an_interpreter.environment import Environment
 from writing_an_interpreter.evaluator import monkey_eval
 from writing_an_interpreter.lexer import Lexer
 from writing_an_interpreter.parser import Parser
@@ -20,6 +21,7 @@ MONKEY_FACE = r'''           __,__
 
 
 def start():
+    environment = Environment()
     while True:
         print(PROMPT, end="")
         scanned = input()
@@ -35,7 +37,7 @@ def start():
                 print("        " + str(error))
             continue
 
-        evaluated = monkey_eval(program)
+        evaluated = monkey_eval(program, environment)
         if evaluated is not None:
             print(evaluated.inspect())
 

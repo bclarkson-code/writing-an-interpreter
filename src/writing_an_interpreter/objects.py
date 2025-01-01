@@ -2,6 +2,9 @@ from abc import abstractmethod
 from dataclasses import dataclass
 from enum import Enum
 
+from writing_an_interpreter.ast import BlockStatement, Identifier
+from writing_an_interpreter.environment import Environment
+
 
 class ObjectType(str, Enum):
     INTEGER = "INTEGER"
@@ -9,6 +12,7 @@ class ObjectType(str, Enum):
     NULL = "NULL"
     RETURN_VALUE = "RETURN_VALUE"
     ERROR = "ERROR"
+    FUNCTION = "FUNCTION"
 
 
 class Object:
@@ -68,3 +72,17 @@ class Error(Object):
 
     def inspect(self):
         return f"ERROR: {self.message}"
+
+
+@dataclass
+class Function(Object):
+    parameters: list[Identifier]
+    body: BlockStatement
+    environment: Environment
+    type: ObjectType = ObjectType.FUNCTION
+
+    def inspect(self):
+        args = ", ".join(str(p) for p in self.parameters)
+        body = self.body
+
+        return f"fn({args}){{\n{body}\n}}"
