@@ -1,18 +1,10 @@
-from writing_an_interpreter.ast import (
-    BooleanExpression,
-    CallExpression,
-    Expression,
-    ExpressionStatement,
-    FunctionLiteral,
-    Identifier,
-    IfExpression,
-    InfixExpression,
-    IntegerLiteral,
-    LetStatement,
-    PrefixExpression,
-    Program,
-    ReturnStatement,
-)
+from writing_an_interpreter.ast import (BooleanExpression, CallExpression,
+                                        Expression, ExpressionStatement,
+                                        FunctionLiteral, Identifier,
+                                        IfExpression, InfixExpression,
+                                        IntegerLiteral, LetStatement,
+                                        PrefixExpression, Program,
+                                        ReturnStatement, StringLiteral)
 from writing_an_interpreter.lexer import Lexer
 from writing_an_interpreter.parser import ParseError, Parser
 from writing_an_interpreter.tokens import Token, TokenType
@@ -409,6 +401,26 @@ def test_can_parse_call_expression():
     assert is_literal_expression_valid(arg_1, 1)
     assert is_infix_expression_valid(arg_2, 2, "*", 3)
     assert is_infix_expression_valid(arg_3, 4, "+", 5)
+
+
+def test_can_parse_string_literal():
+    string = '"hello world";'
+
+    lexer = Lexer(string)
+    parser = Parser(lexer)
+
+    program = parser.parse_program()
+    assert not parser.errors
+
+    assert len(program) == 1
+
+    [statement] = program.statements
+    assert isinstance(statement, ExpressionStatement)
+
+    string_literal = statement.expression
+    assert isinstance(string_literal, StringLiteral)
+
+    assert string_literal.value == "hello world"
 
 
 # -------helper functions-------

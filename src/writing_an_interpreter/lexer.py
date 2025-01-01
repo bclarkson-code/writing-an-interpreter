@@ -62,6 +62,8 @@ class Lexer:
                 token = Token(TokenType.RBRACE, self.current)
             case "":
                 token = Token(TokenType.EOF, "")
+            case '"':
+                token = Token(TokenType.STRING, self.read_string())
             case _:
                 if self.is_letter(self.current):
                     literal = self.read_identifier()
@@ -102,6 +104,13 @@ class Lexer:
         while self.is_letter(self.current):
             self.read_char()
 
+        return self.inputs[start : self.position]
+
+    def read_string(self):
+        start = self.position + 1
+        self.read_char()
+        while self.current not in ['"', ""]:
+            self.read_char()
         return self.inputs[start : self.position]
 
     def read_number(self):

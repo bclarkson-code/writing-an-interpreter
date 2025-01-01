@@ -1,32 +1,15 @@
-from writing_an_interpreter.ast import (
-    BlockStatement,
-    BooleanExpression,
-    CallExpression,
-    Expression,
-    ExpressionStatement,
-    FunctionLiteral,
-    Identifier,
-    IfExpression,
-    InfixExpression,
-    IntegerLiteral,
-    LetStatement,
-    Node,
-    PrefixExpression,
-    Program,
-    ReturnStatement,
-    Statement,
-)
+from writing_an_interpreter.ast import (BlockStatement, BooleanExpression,
+                                        CallExpression, Expression,
+                                        ExpressionStatement, FunctionLiteral,
+                                        Identifier, IfExpression,
+                                        InfixExpression, IntegerLiteral,
+                                        LetStatement, Node, PrefixExpression,
+                                        Program, ReturnStatement, Statement,
+                                        StringLiteral)
 from writing_an_interpreter.environment import Environment
-from writing_an_interpreter.objects import (
-    Boolean,
-    Error,
-    Function,
-    Integer,
-    Null,
-    Object,
-    ObjectType,
-    ReturnValue,
-)
+from writing_an_interpreter.objects import (Boolean, Error, Function, Integer,
+                                            Null, Object, ObjectType,
+                                            ReturnValue, String)
 
 TRUE = Boolean(True)
 FALSE = Boolean(False)
@@ -87,6 +70,9 @@ def monkey_eval(node: Node, environment: Environment) -> Object:
             if len(args) == 1 and is_error(args[0]):
                 return args[0]
             return apply_function(function, args)
+
+        case StringLiteral():
+            return String(value=node.value)
 
         case _:
             return None
@@ -167,6 +153,8 @@ def eval_infix_expression(operator: str, left: Object, right: Object) -> Object:
         )
     elif left.type == ObjectType.INTEGER and right.type == ObjectType.INTEGER:
         return eval_integer_infix_expression(operator, left, right)
+    elif left.type == ObjectType.STRING and right.type == ObjectType.STRING:
+        return eval_string_infix_expression(operator, left, right)
     elif operator == "==":
         return native_bool_to_bool_object(left == right)
     elif operator == "!=":
@@ -207,6 +195,17 @@ def eval_integer_infix_expression(
                 operator=operator,
                 right_type=right.type,
             )
+
+
+def eval_string_infix_expression(operator: str, left: String, right: String) -> String:
+    if operator != "+":
+        return new_error(
+            "unknown operator: {left_type} {operator} {right_type}",
+            left_type=left.type,
+            operator=operator,
+            right_type=right.type,
+        )
+    return String(left.value + right.value)
 
 
 def eval_if_expression(expression: IfExpression, environment: Environment) -> Object:

@@ -8,6 +8,7 @@ from writing_an_interpreter.objects import (
     Integer,
     Null,
     Object,
+    String,
 )
 from writing_an_interpreter.parser import Parser
 
@@ -121,38 +122,18 @@ if (10 > 1) {
 
 def test_error_handling():
     tests = [
-        (
-            "5 + true;",
-            "type mismatch: INTEGER + BOOLEAN",
-        ),
-        (
-            "5 + true; 5;",
-            "type mismatch: INTEGER + BOOLEAN",
-        ),
-        (
-            "-true",
-            "unknown operator: -BOOLEAN",
-        ),
-        (
-            "true + false;",
-            "unknown operator: BOOLEAN + BOOLEAN",
-        ),
-        (
-            "5; true + false; 5",
-            "unknown operator: BOOLEAN + BOOLEAN",
-        ),
-        (
-            "if (10 > 1) { true + false; }",
-            "unknown operator: BOOLEAN + BOOLEAN",
-        ),
+        ("5 + true;", "type mismatch: INTEGER + BOOLEAN"),
+        ("5 + true; 5;", "type mismatch: INTEGER + BOOLEAN"),
+        ("-true", "unknown operator: -BOOLEAN"),
+        ("true + false;", "unknown operator: BOOLEAN + BOOLEAN"),
+        ("5; true + false; 5", "unknown operator: BOOLEAN + BOOLEAN"),
+        ("if (10 > 1) { true + false; }", "unknown operator: BOOLEAN + BOOLEAN"),
         (
             "if (10 > 1) { if (10 > 1) { return true + false; } return 1; } ",
             "unknown operator: BOOLEAN + BOOLEAN",
         ),
-        (
-            "foobar",
-            "identifier not found: foobar",
-        ),
+        ("foobar", "identifier not found: foobar"),
+        ('"Hello" - "World"', "unknown operator: STRING - STRING"),
     ]
     for string, want in tests:
         got = run_eval(string)
@@ -195,6 +176,22 @@ def test_can_eval_function_application_statements():
     for string, want in tests:
         got = run_eval(string)
         assert is_integer_object_valid(got, want)
+
+
+def test_can_build_string_literal():
+    string = '"Hello world!"'
+
+    got = run_eval(string)
+    assert isinstance(got, String)
+    assert str(got.value) == "Hello world!"
+
+
+def test_can_concat_string():
+    string = '"Hello" + " " + "world!"'
+
+    got = run_eval(string)
+    assert isinstance(got, String)
+    assert str(got.value) == "Hello world!"
 
 
 # --------helper functions---------

@@ -110,6 +110,8 @@ if (5 < 10) {
 
 10 == 10;
 10 != 9;
+"foobar"
+"foo bar"
 """
     want = [
         Token(TokenType.LET, "let"),
@@ -185,6 +187,8 @@ if (5 < 10) {
         Token(TokenType.NOT_EQ, "!="),
         Token(TokenType.INT, "9"),
         Token(TokenType.SEMICOLON, ";"),
+        Token(TokenType.STRING, "foobar"),
+        Token(TokenType.STRING, "foo bar"),
         Token(TokenType.EOF, ""),
     ]
 

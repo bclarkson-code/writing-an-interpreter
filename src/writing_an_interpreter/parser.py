@@ -16,6 +16,7 @@ from writing_an_interpreter.ast import (
     PrefixExpression,
     Program,
     ReturnStatement,
+    StringLiteral,
 )
 from writing_an_interpreter.lexer import Lexer
 from writing_an_interpreter.tokens import Token, TokenType
@@ -75,6 +76,7 @@ class Parser:
         self.register_prefix(TokenType.LPAREN, self.parse_grouped_expression)
         self.register_prefix(TokenType.IF, self.parse_if_expression)
         self.register_prefix(TokenType.FUNCTION, self.parse_function_literal)
+        self.register_prefix(TokenType.STRING, self.parse_string_literal)
 
         self.infix_parse_functions = {}
         self.register_infix(TokenType.PLUS, self.parse_infix_expression)
@@ -351,3 +353,7 @@ class Parser:
             return None
 
         return arguments
+
+    def parse_string_literal(self):
+        token = self.token
+        return StringLiteral(token=token, value=token.literal)

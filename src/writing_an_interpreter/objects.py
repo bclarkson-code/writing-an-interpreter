@@ -13,6 +13,7 @@ class ObjectType(str, Enum):
     RETURN_VALUE = "RETURN_VALUE"
     ERROR = "ERROR"
     FUNCTION = "FUNCTION"
+    STRING = "STRING"
 
 
 class Object:
@@ -86,3 +87,12 @@ class Function(Object):
         body = self.body
 
         return f"fn({args}){{\n{body}\n}}"
+
+
+@dataclass
+class String(Object):
+    value: str
+    type: ObjectType = ObjectType.STRING
+
+    def inspect(self):
+        return self.value

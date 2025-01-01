@@ -261,6 +261,24 @@ class CallExpression(Expression):
 
 
 @dataclass
+class StringLiteral(Expression):
+    token: Token
+    value: str
+
+    def expression_node(self):
+        return None
+
+    def token_literal(self):
+        return self.token.literal
+
+    def __repr__(self):
+        return self.__str__()
+
+    def __str__(self):
+        return self.token.literal
+
+
+@dataclass
 class Program(Sequence):
     statements: list[Statement]
 
