@@ -1,15 +1,34 @@
-from writing_an_interpreter.ast import (BlockStatement, BooleanExpression,
-                                        CallExpression, Expression,
-                                        ExpressionStatement, FunctionLiteral,
-                                        Identifier, IfExpression,
-                                        InfixExpression, IntegerLiteral,
-                                        LetStatement, Node, PrefixExpression,
-                                        Program, ReturnStatement, Statement,
-                                        StringLiteral)
+from writing_an_interpreter.ast import (
+    BlockStatement,
+    BooleanExpression,
+    CallExpression,
+    Expression,
+    ExpressionStatement,
+    FunctionLiteral,
+    Identifier,
+    IfExpression,
+    InfixExpression,
+    IntegerLiteral,
+    LetStatement,
+    Node,
+    PrefixExpression,
+    Program,
+    ReturnStatement,
+    StringLiteral,
+)
 from writing_an_interpreter.environment import Environment
-from writing_an_interpreter.objects import (Boolean, Error, Function, Integer,
-                                            Null, Object, ObjectType,
-                                            ReturnValue, String)
+from writing_an_interpreter.objects import (
+    Boolean,
+    Builtin,
+    Error,
+    Function,
+    Integer,
+    Null,
+    Object,
+    ObjectType,
+    ReturnValue,
+    String,
+)
 
 TRUE = Boolean(True)
 FALSE = Boolean(False)
@@ -221,9 +240,11 @@ def eval_if_expression(expression: IfExpression, environment: Environment) -> Ob
 
 
 def eval_identifier(identifier: Identifier, environment: Environment) -> Object:
-    if identifier.value not in environment:
-        return new_error(f"identifier not found: {identifier.value}")
-    return environment[identifier.value]
+    if identifier.value in environment:
+        return environment[identifier.value]
+    if identifier.value in builtins:
+        return builtins[identifier.value]
+    return new_error(f"identifier not found: {identifier.value}")
 
 
 def eval_expressions(
@@ -239,9 +260,15 @@ def eval_expressions(
 
 
 def apply_function(function: Function, args: list[Object]):
-    extended_environment = extend_function_environment(function, args)
-    evaluated = monkey_eval(function.body, extended_environment)
-    return unwrap_return_value(evaluated)
+    match function:
+        case Function():
+            extended_environment = extend_function_environment(function, args)
+            evaluated = monkey_eval(function.body, extended_environment)
+            return unwrap_return_value(evaluated)
+        case Builtin():
+            return function.function(*args)
+        case _:
+            return new_error("not a function: {type}", type=function.type)
 
 
 def extend_function_environment(function: Function, args: list[Object]):
@@ -276,3 +303,20 @@ def is_error(obj: Object) -> bool:
         return False
 
     return obj.type == ObjectType.ERROR
+
+
+# ------builtins--------
+def run_len(*args):
+    if len(args) != 1:
+        return new_error(
+            "wrong number of arguments. got={argslen}, want=1", argslen=len(args)
+        )
+    [arg] = args
+    match arg:
+        case String():
+            return Integer(value=len(arg.value))
+        case _:
+            return new_error("argument to 'len' not supported, got {arg}", arg=arg.type)
+
+
+builtins = {"len": Builtin(run_len)}

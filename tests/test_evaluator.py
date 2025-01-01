@@ -194,6 +194,25 @@ def test_can_concat_string():
     assert str(got.value) == "Hello world!"
 
 
+def test_can_eval_builtin_functions():
+    tests = [
+        ('len("")', 0),
+        ('len("four")', 4),
+        ('len("hello world")', 11),
+        ("len(1)", "argument to 'len' not supported, got INTEGER"),
+        ('len("one", "two")', "wrong number of arguments. got=2, want=1"),
+    ]
+
+    for string, want in tests:
+        got = run_eval(string)
+        match want:
+            case int():
+                assert is_integer_object_valid(got, want)
+            case str():
+                assert isinstance(got, Error)
+                assert got.message == want
+
+
 # --------helper functions---------
 def run_eval(string: str) -> Object:
     environment = Environment()

@@ -1,6 +1,7 @@
 from abc import abstractmethod
 from dataclasses import dataclass
 from enum import Enum
+from typing import Callable
 
 from writing_an_interpreter.ast import BlockStatement, Identifier
 from writing_an_interpreter.environment import Environment
@@ -14,6 +15,7 @@ class ObjectType(str, Enum):
     ERROR = "ERROR"
     FUNCTION = "FUNCTION"
     STRING = "STRING"
+    BUILTIN = "BUILTIN"
 
 
 class Object:
@@ -96,3 +98,12 @@ class String(Object):
 
     def inspect(self):
         return self.value
+
+
+@dataclass
+class Builtin(Object):
+    function: Callable
+    type: ObjectType = ObjectType.BUILTIN
+
+    def inspect(self):
+        return "builtin function"
