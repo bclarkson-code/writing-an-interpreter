@@ -1,3 +1,4 @@
+import sys
 from pathlib import Path
 
 from writing_an_interpreter.environment import Environment
@@ -39,13 +40,23 @@ def execute_string(text, environment) -> Object | None | list[Exception]:
 
 
 def load_standard_library(environment):
-    dir = Path(__file__).parent
-    stdlib_path = dir / "standard_library.🐵"
-    out = execute_string(stdlib_path.read_text(), environment)
-    if isinstance(out, list):
-        # failed to read standard library
+    # Try to get the PyInstaller bundle path first
+    if getattr(sys, 'frozen', False):
+        base_path = Path(sys._MEIPASS)
+        stdlib_path = base_path / "writing_an_interpreter" / "standard_library.🐵"
+    else:
+        # If not bundled, use the original Path approach
+        stdlib_path = Path(__file__).parent / "standard_library.🐵"
+    
+    try:
+        out = execute_string(stdlib_path.read_text(), environment)
+        if isinstance(out, list):
+            # failed to read standard library
+            exit(1)
+        return environment
+    except FileNotFoundError as e:
+        print(f"Failed to load standard library from {stdlib_path}: {e}")
         exit(1)
-    return environment
 
 
 def start():

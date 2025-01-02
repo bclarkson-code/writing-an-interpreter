@@ -1,4 +1,5 @@
 from copy import deepcopy
+from pathlib import Path
 
 from writing_an_interpreter.ast import (
     ArrayLiteral,
@@ -29,7 +30,6 @@ from writing_an_interpreter.objects import (
     Error,
     Function,
     Hash,
-    HashKey,
     HashPair,
     Integer,
     Null,
@@ -521,6 +521,32 @@ def run_values(*args):
     return Array(elements=elements)
 
 
+def run_read_file(*args):
+    if len(args) != 1:
+        return new_error(
+            "wrong number of arguments. got={argslen}, want=1", argslen=len(args)
+        )
+
+    [path] = args
+    if path.type != ObjectType.STRING:
+        return new_error(
+            "argument to 'read_file' must be STRING, got {arg}", arg=path.type
+        )
+
+    try:
+        content = Path(path.value).read_text()
+    except FileNotFoundError:
+        return new_error("file {path} does not exist", path=path.value)
+    except PermissionError:
+        return new_error("permission denied to read file {path}", path=path.value)
+    except UnicodeDecodeError:
+        return new_error("file contains invalid characters for the specified encoding")
+    except OSError as e:
+        return new_error(f"OS error occurred: {e}")
+
+    return String(content)
+
+
 builtins = {
     "len": Builtin(run_len),
     "first": Builtin(run_first),
@@ -531,4 +557,5 @@ builtins = {
     "contains": Builtin(run_contains),
     "keys": Builtin(run_keys),
     "values": Builtin(run_values),
+    "read_file": Builtin(run_read_file),
 }

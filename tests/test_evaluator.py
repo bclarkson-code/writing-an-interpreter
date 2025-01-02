@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from writing_an_interpreter.environment import Environment
 from writing_an_interpreter.evaluator import monkey_eval
 from writing_an_interpreter.lexer import Lexer
@@ -231,6 +233,15 @@ def test_can_eval_builtin_functions():
         ("values({1:1, 2:2})", Array([Integer(1), Integer(2)])),
         ("values()", "wrong number of arguments. got=0, want=1"),
         ("values(1)", "argument to 'values' must be HASH, got INTEGER"),
+        (
+            'read_file("example_script.🐵")',
+            Path("example_script.🐵").read_text(),
+        ),
+        ("read_file()", "wrong number of arguments. got=0, want=1"),
+        ('read_file("test", "test")', "wrong number of arguments. got=2, want=1"),
+        ('read_file("does_not_exist.🐵")', "file does_not_exist.🐵 does not exist"),
+        ("read_file(1)", "argument to 'read_file' must be STRING, got INTEGER"),
+        ('read_file("")', "OS error occurred: [Errno 21] Is a directory: '.'"),
     ]
 
     for string, want in tests:
@@ -239,8 +250,13 @@ def test_can_eval_builtin_functions():
             case int():
                 assert is_integer_object_valid(got, want)
             case str():
-                assert isinstance(got, Error)
-                assert got.message == want
+                match got:
+                    case Error():
+                        assert got.message == want
+                    case String():
+                        assert got.value == want
+                    case _:
+                        raise TypeError(f"Unexpected type: {type(got)}")
 
 
 def test_can_build_array_literal():

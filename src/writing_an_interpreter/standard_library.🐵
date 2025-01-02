@@ -22,9 +22,16 @@ let reduce = fn(arr, initial, func) {
 	}
 	iter(arr, initial)
 }
+let add = fn(x, y) {x + y};
+let sub = fn(x, y) {x - y};
+let mul = fn(x, y) {x * y};
+let div = fn(x, y) {x / y};
 
 let sum = fn(arr) {
-    let add = fn(x, y) {x + y};
-	reduce(arr, 0, add)
+    reduce(arr, 0, add)
+}
+
+let product = fn(arr) {
+    reduce(arr, 1, mul)
 }
 
