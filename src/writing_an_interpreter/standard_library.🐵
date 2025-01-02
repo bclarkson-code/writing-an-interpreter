@@ -21,7 +21,7 @@ let reduce = fn(arr, initial, func) {
 		}
 	}
 	iter(arr, initial)
-}
+};
 let add = fn(x, y) {x + y};
 let sub = fn(x, y) {x - y};
 let mul = fn(x, y) {x * y};
@@ -29,9 +29,28 @@ let div = fn(x, y) {x / y};
 
 let sum = fn(arr) {
     reduce(arr, 0, add)
-}
+};
 
 let product = fn(arr) {
     reduce(arr, 1, mul)
-}
+};
 
+let split = fn(string, splitVal) {
+    let iter = fn(string, out, current) {
+    	if (len(string) == 0) {
+		return push(out, current);
+	};
+
+	let val = first(string);
+	let _ = puts(val);
+	let _ = puts(val == splitVal);
+	if (val == splitVal) {
+		let out = push(out, current);
+		let current = "";
+	} else {
+		let current = current + val;
+	};
+	return iter(rest(string), out, current)
+    };
+    return iter(string, [], "");
+};

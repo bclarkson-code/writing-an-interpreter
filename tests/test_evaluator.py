@@ -69,6 +69,45 @@ def test_can_eval_boolean_expression():
         assert is_boolean_object_valid(got, want)
 
 
+def test_can_eval_string_expression():
+    tests = [
+        ('"a"', "a"),
+        ('""', ""),
+        ('"aaaaaab"', "aaaaaab"),
+        ('"a" + "bb"', "abb"),
+        ('"a" + "b" + "c"', "abc"),
+        ('("a" + "b") + "c"', "abc"),
+        ('"a" + ("b") + "c"', "abc"),
+        ('"a" + ("b" + "c")', "abc"),
+        ('"a" == "a"', True),
+        ('"a" == "b"', False),
+        ('"a" == "A"', False),
+        ('"abc" == "abc"', True),
+        ('"abc" == "ab"', False),
+        ('"abc" == ""', False),
+        ('("abc" == "") == false', True),
+        ('("abc" == "abc") == false', False),
+        ('"a" != "a"', False),
+        ('"a" != "b"', True),
+        ('"a" != "A"', True),
+        ('"abc" != "abc"', False),
+        ('"abc" != "ab"', True),
+        ('"abc" != ""', True),
+        ('("abc" != "") == false', False),
+        ('("abc" != "abc") == false', True),
+        ('("abc" != "") != false', True),
+        ('("abc" != "abc") != false', False),
+    ]
+
+    for string, want in tests:
+        got = run_eval(string)
+        match want:
+            case str():
+                assert is_string_object_valid(got, want)
+            case bool():
+                assert is_boolean_object_valid(got, want)
+
+
 def test_can_eval_bang_operator():
     tests = [
         ("!true", False),
@@ -188,22 +227,6 @@ def test_can_eval_function_application_statements():
         assert is_integer_object_valid(got, want)
 
 
-def test_can_build_string_literal():
-    string = '"Hello world!"'
-
-    got = run_eval(string)
-    assert isinstance(got, String)
-    assert str(got.value) == "Hello world!"
-
-
-def test_can_concat_string():
-    string = '"Hello" + " " + "world!"'
-
-    got = run_eval(string)
-    assert isinstance(got, String)
-    assert str(got.value) == "Hello world!"
-
-
 def test_can_eval_builtin_functions():
     tests = [
         ('len("")', 0),
@@ -214,14 +237,15 @@ def test_can_eval_builtin_functions():
         ('len("one", "two")', "wrong number of arguments. got=2, want=1"),
         ("len([1,2,3])", 3),
         ("first([1,2,3])", 1),
+        ('first("abc")', "a"),
         ("first([], [1])", "wrong number of arguments. got=2, want=1"),
-        ("first(1)", "argument to 'first' must be ARRAY, got INTEGER"),
+        ("first(1)", "argument to 'first' must be ARRAY or STRING, got INTEGER"),
         ("last([1,2,3])", 3),
         ("last([], [1])", "wrong number of arguments. got=2, want=1"),
-        ("last(1)", "argument to 'last' must be ARRAY, got INTEGER"),
+        ("last(1)", "argument to 'last' must be ARRAY or STRING, got INTEGER"),
         ("rest([1,2,3])", Array([Integer(2), Integer(3)])),
         ("rest([], [1])", "wrong number of arguments. got=2, want=1"),
-        ("rest(1)", "argument to 'rest' must be ARRAY, got INTEGER"),
+        ("rest(1)", "argument to 'rest' must be ARRAY or STRING, got INTEGER"),
         ("push([], 1)", Array([Integer(1)])),
         ("push([1,2], 3)", Array([Integer(1), Integer(2), Integer(3)])),
         ("push([])", "wrong number of arguments. got=1, want=2"),
@@ -250,10 +274,19 @@ def test_can_eval_builtin_functions():
         ("sort([])", Array([])),
         ("sort([1,2,3])", Array([Integer(1), Integer(2), Integer(3)])),
         ("sort([3,1,2])", Array([Integer(1), Integer(2), Integer(3)])),
+        ('sort(["b", "a"])', Array([String("a"), String("b")])),
+        ('sort(["aa", "a"])', Array([String("aa"), String("a")])),
+        (
+            "sort([true, false, false])",
+            Array([Boolean(False), Boolean(False), Boolean(True)]),
+        ),
         ("sort()", "wrong number of arguments. got=0, want=1"),
         ("sort([], [])", "wrong number of arguments. got=2, want=1"),
         ("sort(1)", "argument to 'sort' must be ARRAY, got INTEGER"),
-        ("sort([true])", "argument to 'sort' must be ARRAY of INTEGER got [BOOLEAN]"),
+        (
+            "sort([1, true])",
+            "argument to 'sort' must be ARRAY with a single type, got [INTEGER, BOOLEAN]",
+        ),
     ]
 
     for string, want in tests:
@@ -317,11 +350,11 @@ def test_can_eval_array_index_expressions():
 
 def test_can_eval_string_index_expressions():
     tests = [
-        # ('"abc"[0]', "a"),
-        # ('"abc"[1]', "b"),
-        # ('"abc"[2]', "c"),
-        # ('let i = 0; "a"[i];', "a"),
-        # ('"abc"[1 + 1];', "c"),
+        ('"abc"[0]', "a"),
+        ('"abc"[1]', "b"),
+        ('"abc"[2]', "c"),
+        ('let i = 0; "a"[i];', "a"),
+        ('"abc"[1 + 1];', "c"),
         ('let myString = "abc"; myString[2];', "c"),
         ('let myString = "abc"; myString[0] + myString[2] + myString[1];', "acb"),
         ('"abc"[3]', None),
@@ -329,10 +362,8 @@ def test_can_eval_string_index_expressions():
     ]
 
     for string, want in tests:
-        breakpoint()
         got = run_eval(string)
         if isinstance(want, str):
-            breakpoint()
             assert is_string_object_valid(got, want)
         else:
             assert is_null_object_valid(got)
