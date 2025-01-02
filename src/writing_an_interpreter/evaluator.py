@@ -290,6 +290,8 @@ def eval_expressions(
 def eval_index_expression(left: Object, index_: Object) -> Object:
     if left.type == ObjectType.ARRAY and index_.type == ObjectType.INTEGER:
         return eval_array_index_expression(left, index_)
+    elif left.type == ObjectType.STRING and index_.type == ObjectType.INTEGER:
+        return eval_string_index_expression(left, index_)
     elif left.type == ObjectType.HASH:
         return eval_hash_index_expression(left, index_)
     else:
@@ -306,6 +308,16 @@ def eval_array_index_expression(array: Array, index_: Integer) -> Object:
         return NULL
 
     return array.elements[idx]
+
+
+def eval_string_index_expression(string: String, index_: Integer) -> Object:
+    idx = index_.value
+    max_idx = len(string.value) - 1
+
+    if idx < 0 or idx > max_idx:
+        return NULL
+
+    return String(string.value[idx])
 
 
 def eval_hash_index_expression(hash_obj: Hash, index_: Integer) -> Object:
@@ -466,6 +478,32 @@ def run_push(*args):
     return Array(elements=elements)
 
 
+def run_sort(*args):
+    if len(args) != 1:
+        return new_error(
+            "wrong number of arguments. got={argslen}, want=1", argslen=len(args)
+        )
+
+    [arr] = args
+    if arr.type != ObjectType.ARRAY:
+        return new_error("argument to 'sort' must be ARRAY, got {arg}", arg=arr.type)
+
+    types = [val.type for val in arr.elements]
+    if not all(val.type == ObjectType.INTEGER for val in arr.elements):
+        types = [val.type for val in arr.elements]
+        types = ", ".join(types)
+        types = f"[{types}]"
+        return new_error(
+            "argument to 'sort' must be ARRAY of INTEGER got {types}", types=types
+        )
+
+    elements = deepcopy(arr.elements)
+    values = [e.value for e in elements]
+    values = sorted(values)
+    elements = [Integer(val) for val in values]
+    return Array(elements=elements)
+
+
 def run_puts(*args):
     for arg in args:
         print(arg.inspect())
@@ -553,6 +591,7 @@ builtins = {
     "last": Builtin(run_last),
     "rest": Builtin(run_rest),
     "push": Builtin(run_push),
+    "sort": Builtin(run_sort),
     "puts": Builtin(run_puts),
     "contains": Builtin(run_contains),
     "keys": Builtin(run_keys),

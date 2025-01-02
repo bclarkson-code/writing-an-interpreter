@@ -149,6 +149,7 @@ def test_error_handling():
 def test_can_eval_let_statements():
     tests = [
         ("let a = 5; a;", 5),
+        ('let string = "a"; string;', "a"),
         ("let a = 5 * 5; a;", 25),
         ("let a = 5; let b = a; b;", 5),
         ("let a = 5; let b = a; let c = a + b + 5; c;", 15),
@@ -156,7 +157,11 @@ def test_can_eval_let_statements():
 
     for string, want in tests:
         got = run_eval(string)
-        assert is_integer_object_valid(got, want)
+        match want:
+            case int():
+                assert is_integer_object_valid(got, want)
+            case str():
+                assert is_string_object_valid(got, want)
 
 
 def test_can_build_function_object():
@@ -242,6 +247,13 @@ def test_can_eval_builtin_functions():
         ('read_file("does_not_exist.🐵")', "file does_not_exist.🐵 does not exist"),
         ("read_file(1)", "argument to 'read_file' must be STRING, got INTEGER"),
         ('read_file("")', "OS error occurred: [Errno 21] Is a directory: '.'"),
+        ("sort([])", Array([])),
+        ("sort([1,2,3])", Array([Integer(1), Integer(2), Integer(3)])),
+        ("sort([3,1,2])", Array([Integer(1), Integer(2), Integer(3)])),
+        ("sort()", "wrong number of arguments. got=0, want=1"),
+        ("sort([], [])", "wrong number of arguments. got=2, want=1"),
+        ("sort(1)", "argument to 'sort' must be ARRAY, got INTEGER"),
+        ("sort([true])", "argument to 'sort' must be ARRAY of INTEGER got [BOOLEAN]"),
     ]
 
     for string, want in tests:
@@ -299,6 +311,29 @@ def test_can_eval_array_index_expressions():
         got = run_eval(string)
         if isinstance(want, int):
             assert is_integer_object_valid(got, want)
+        else:
+            assert is_null_object_valid(got)
+
+
+def test_can_eval_string_index_expressions():
+    tests = [
+        # ('"abc"[0]', "a"),
+        # ('"abc"[1]', "b"),
+        # ('"abc"[2]', "c"),
+        # ('let i = 0; "a"[i];', "a"),
+        # ('"abc"[1 + 1];', "c"),
+        ('let myString = "abc"; myString[2];', "c"),
+        ('let myString = "abc"; myString[0] + myString[2] + myString[1];', "acb"),
+        ('"abc"[3]', None),
+        ('"abc"[-1]', None),
+    ]
+
+    for string, want in tests:
+        breakpoint()
+        got = run_eval(string)
+        if isinstance(want, str):
+            breakpoint()
+            assert is_string_object_valid(got, want)
         else:
             assert is_null_object_valid(got)
 
@@ -367,6 +402,12 @@ def run_eval(string: str) -> Object:
 
 def is_integer_object_valid(got: Integer, want: int):
     assert isinstance(got, Integer)
+    assert got.value == want
+    return True
+
+
+def is_string_object_valid(got: String, want: str):
+    assert isinstance(got, String)
     assert got.value == want
     return True
 
