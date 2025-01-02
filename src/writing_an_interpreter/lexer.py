@@ -93,7 +93,7 @@ class Lexer:
             raise ValueError(f"Expected string of length 1. Found: {char}")
 
         is_lowercase = ord("a") <= ord(char) <= ord("z")
-        is_uppercase = ord("A") <= ord(char) <= ord("A")
+        is_uppercase = ord("A") <= ord(char) <= ord("Z")
         is_underscore = char == "_"
 
         return is_lowercase | is_uppercase | is_underscore
