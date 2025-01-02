@@ -248,6 +248,32 @@ def run_read_file(*args):
     return String(content)
 
 
+def run_int(*args):
+    if len(args) != 1:
+        return new_error(
+            "wrong number of arguments. got={argslen}, want=1", argslen=len(args)
+        )
+
+    [arg] = args
+    match arg.type:
+        case ObjectType.INTEGER:
+            return arg
+        case ObjectType.BOOLEAN:
+            return Integer(1) if arg.value else Integer(0)
+        case ObjectType.STRING:
+            try:
+                return Integer(int(arg.value))
+            except ValueError:
+                return new_error(
+                    "cannot convert string {string} to INTEGER", string=arg.value
+                )
+        case _:
+            return new_error(
+                "argument to 'int' must be INTEGER, STRING or BOOLEAN, got {arg_type}",
+                arg_type=arg.type,
+            )
+
+
 builtins = {
     "len": Builtin(run_len),
     "first": Builtin(run_first),
@@ -260,4 +286,5 @@ builtins = {
     "keys": Builtin(run_keys),
     "values": Builtin(run_values),
     "read_file": Builtin(run_read_file),
+    "int": Builtin(run_int),
 }

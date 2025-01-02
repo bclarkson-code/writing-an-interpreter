@@ -440,6 +440,26 @@ def test_can_parse_string_literal():
     assert string_literal.value == "hello world"
 
 
+def test_can_parse_string_escape_sequences():
+    string = '"hello world\\n\\r\\t\\\\";'
+
+    lexer = Lexer(string)
+    parser = Parser(lexer)
+
+    program = parser.parse_program()
+    assert not parser.errors
+
+    assert len(program) == 1
+
+    [statement] = program.statements
+    assert isinstance(statement, ExpressionStatement)
+
+    string_literal = statement.expression
+    assert isinstance(string_literal, StringLiteral)
+
+    assert string_literal.value == "hello world\n\r\t\\"
+
+
 def test_can_parse_array_literal():
     string = "[1, 2 * 2, 3 + 3]"
 

@@ -287,6 +287,14 @@ def test_can_eval_builtin_functions():
             "sort([1, true])",
             "argument to 'sort' must be ARRAY with a single type, got [INTEGER, BOOLEAN]",
         ),
+        ("int(1)", Integer(1)),
+        ('int("2")', Integer(2)),
+        ("int(true)", Integer(1)),
+        ("int(false)", Integer(0)),
+        ("int()", "wrong number of arguments. got=0, want=1"),
+        ("int([], [])", "wrong number of arguments. got=2, want=1"),
+        ("int([])", "argument to 'int' must be INTEGER, STRING or BOOLEAN, got ARRAY"),
+        ('int("one")', "cannot convert string one to INTEGER"),
     ]
 
     for string, want in tests:

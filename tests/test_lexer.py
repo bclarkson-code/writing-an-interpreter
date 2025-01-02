@@ -114,6 +114,7 @@ if (5 < 10) {
 "foo bar"
 [1, 2];
 {"foo": "bar"}
+puts("\\n")
 """
     want = [
         Token(TokenType.LET, "let"),
@@ -202,6 +203,10 @@ if (5 < 10) {
         Token(TokenType.COLON, ":"),
         Token(TokenType.STRING, "bar"),
         Token(TokenType.RBRACE, "}"),
+        Token(TokenType.IDENT, "puts"),
+        Token(TokenType.LPAREN, "("),
+        Token(TokenType.STRING, "\\n"),
+        Token(TokenType.RPAREN, ")"),
         Token(TokenType.EOF, ""),
     ]
 

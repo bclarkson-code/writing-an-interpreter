@@ -1,15 +1,26 @@
 from enum import IntEnum, auto
 from typing import Callable
 
-from writing_an_interpreter.ast import (ArrayLiteral, BlockStatement,
-                                        BooleanExpression, CallExpression,
-                                        Expression, ExpressionStatement,
-                                        FunctionLiteral, HashLiteral,
-                                        Identifier, IfExpression,
-                                        IndexExpression, InfixExpression,
-                                        IntegerLiteral, LetStatement,
-                                        PrefixExpression, Program,
-                                        ReturnStatement, StringLiteral)
+from writing_an_interpreter.ast import (
+    ArrayLiteral,
+    BlockStatement,
+    BooleanExpression,
+    CallExpression,
+    Expression,
+    ExpressionStatement,
+    FunctionLiteral,
+    HashLiteral,
+    Identifier,
+    IfExpression,
+    IndexExpression,
+    InfixExpression,
+    IntegerLiteral,
+    LetStatement,
+    PrefixExpression,
+    Program,
+    ReturnStatement,
+    StringLiteral,
+)
 from writing_an_interpreter.lexer import Lexer
 from writing_an_interpreter.tokens import Token, TokenType
 
@@ -333,7 +344,14 @@ class Parser:
 
     def parse_string_literal(self):
         token = self.token
-        return StringLiteral(token=token, value=token.literal)
+        # escape sequences
+        literal = (
+            token.literal.replace("\\n", "\n")
+            .replace("\\r", "\r")
+            .replace("\\t", "\t")
+            .replace("\\\\", "\\")
+        )
+        return StringLiteral(token=token, value=literal)
 
     def parse_array_literal(self):
         token = self.token

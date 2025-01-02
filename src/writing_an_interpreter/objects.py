@@ -98,7 +98,7 @@ class String(Object):
     type: ObjectType = ObjectType.STRING
 
     def inspect(self):
-        return self.value
+        return f'"{self.value}"'
 
     def hash(self):
         return HashKey(value=hash(self.value), type=ObjectType.STRING)
