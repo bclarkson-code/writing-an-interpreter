@@ -41,6 +41,9 @@ let add = fn(x, y) {x + y};
 let sub = fn(x, y) {x - y};
 let mul = fn(x, y) {x * y};
 let div = fn(x, y) {x / y};
+let abs = fn(x) {
+	if (x > 0){x} else {-x}
+}
 
 let sum = fn(arr) {
     reduce(arr, 0, add)
@@ -67,17 +70,3 @@ let split = fn(string, splitVal) {
     };
     return iter(string, [], "");
 };
-
-let remove = fn(string, char) {
-	let iter = fn(string, out) {
-		if (len(string) == 0) {
-			return out
-		}
-		let head = first(string);
-		if (head != char) {
-			let out = push(out, head);
-		}
-		iter(rest(string), out)
-	}
-	iter(string, [])
-}
