@@ -42,6 +42,7 @@ class TokenType(str, Enum):
     IF = "IF"
     ELSE = "ELSE"
     RETURN = "RETURN"
+    FOR = "FOR"
 
     def __hash__(self):
         return hash(self.value)
@@ -64,4 +65,5 @@ keywords = {
     "if": TokenType.IF,
     "else": TokenType.ELSE,
     "return": TokenType.RETURN,
+    "for": TokenType.FOR,
 }

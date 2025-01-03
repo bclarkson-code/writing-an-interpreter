@@ -115,6 +115,7 @@ if (5 < 10) {
 [1, 2];
 {"foo": "bar"}
 puts("\\n")
+for(let i = 0; i < 10; i = i + 1;){}
 """
     want = [
         Token(TokenType.LET, "let"),
@@ -207,6 +208,26 @@ puts("\\n")
         Token(TokenType.LPAREN, "("),
         Token(TokenType.STRING, "\\n"),
         Token(TokenType.RPAREN, ")"),
+        Token(TokenType.FOR, "for"),
+        Token(TokenType.LPAREN, "("),
+        Token(TokenType.LET, "let"),
+        Token(TokenType.IDENT, "i"),
+        Token(TokenType.ASSIGN, "="),
+        Token(TokenType.INT, "0"),
+        Token(TokenType.SEMICOLON, ";"),
+        Token(TokenType.IDENT, "i"),
+        Token(TokenType.LT, "<"),
+        Token(TokenType.INT, "10"),
+        Token(TokenType.SEMICOLON, ";"),
+        Token(TokenType.IDENT, "i"),
+        Token(TokenType.ASSIGN, "="),
+        Token(TokenType.IDENT, "i"),
+        Token(TokenType.PLUS, "+"),
+        Token(TokenType.INT, "1"),
+        Token(TokenType.SEMICOLON, ";"),
+        Token(TokenType.RPAREN, ")"),
+        Token(TokenType.LBRACE, "{"),
+        Token(TokenType.RBRACE, "}"),
         Token(TokenType.EOF, ""),
     ]
 
