@@ -1,0 +1,36 @@
+let load_data = fn(path) {
+	let data = read_file(path);
+	return split(data, "\n")
+};
+
+let to_pairs = fn(val){
+	let not_empty = fn(x){x!=" "};
+	let val = filter(val, not_empty);
+	map(val, int)
+};
+
+let find_total = fn(left, right, acc) {
+	if (len(left) == 0) {
+		return acc
+	};
+	let left_val = first(left);
+	let right_val = first(right);
+	let acc = acc + abs(left_val - right_val);
+	return find_total(
+		rest(left), rest(right), acc
+	)
+	
+}
+
+
+let data = load_data("/Users/bco60/Documents/writing-an-interpreter/advent_of_code/day_1_input.txt");
+let data = filter(data, fn(val) {return val != ""})
+let pairs = map(data, to_pairs);
+let left = map(pairs, fn(arr) {arr[0]});
+let left = sort(left);
+
+let right = map(pairs, fn(arr) {arr[1]});
+let right = sort(right);
+
+let total = find_total(left, right, 0)
+puts(total);
